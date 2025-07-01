@@ -5,11 +5,8 @@
 #include <cstring>
 #include <new>
 
-#undef MIN
-#undef MAX
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+namespace gemm {
+namespace detail {
 
 #if defined(__SSE__)
 #include <smmintrin.h>
@@ -117,5 +114,6 @@ inline __m256 set1<__m256>(float x) { return _mm256_set1_ps(x); }
 
 
 
-
+}
+}
 #endif // X86_KERNELS_HPP_

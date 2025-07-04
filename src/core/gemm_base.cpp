@@ -4,8 +4,8 @@ namespace gemm {
 namespace detail {
 
 template <typename T>
-T* malloc_aligned(std::int64_t m, std::int64_t n, std::int64_t size) {
-    std::int64_t bytes = m * n * size;
+T* malloc_aligned(int64_t m, int64_t n, int64_t size) {
+    int64_t bytes = m * n * size;
     if (bytes % MEMORY_ALIGNMENT != 0) {
         bytes += MEMORY_ALIGNMENT - (bytes % MEMORY_ALIGNMENT);
     }

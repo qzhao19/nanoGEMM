@@ -15,11 +15,11 @@ namespace detail {
 template <typename T>
 T* malloc_aligned(int64_t m, int64_t n, int64_t size);
 
-template <typename T, int64_t MR, int64_t NR>
-void pack_matrix_A(int64_t m, int64_t k, T *A, int64_t lda, int64_t offset, T *packA);
+template <typename TA, int64_t RM, int64_t RN>
+void pack_matrix_A(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA *packA);
 
-template <typename T, int64_t MR, int64_t NR>
-void pack_matrix_B(int64_t k, int64_t n, T *B, int64_t ldb, int64_t offset, T *packB);
+template <typename TB, int64_t RM, int64_t RN>
+void pack_matrix_B(int64_t k, int64_t n, TB *B, int64_t ldb, int64_t offset, TB *packB);
 
 }
 }

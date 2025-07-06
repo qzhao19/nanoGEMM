@@ -19,24 +19,30 @@ T* malloc_aligned(int64_t m, int64_t n, int64_t size) {
     return static_cast<T*>(ptr);
 }; 
 
-template <typename T, int64_t MR, int64_t NR>
-void pack_matrix_A(int64_t m, int64_t k, T *A, int64_t lda, int64_t offset, T *packA) {
+template <typename TA, int64_t RM, int64_t RN>
+void pack_matrix_A(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA *packA) {
     int64_t i, p;
-    T *a_ptr[MR];
+    TA *a_ptr[RM];
 
-    for (i = 0; i < m; i++) {
-        a_ptr[i] = A + (offset + i);
-    }
-
-    for (i = m; i < MR; i++) {
-        a_ptr[ i ] = A + (offset + 0);
+    for (i = 0; i < RM; ++i) {
+        if (i < m) {
+            a_ptr[i] = &A[offset + i];
+        }
+        else {
+            a_ptr[i] = nullptr;
+        }
     }
 
     for (p = 0; p < k; p++) {
-        for (i = 0; i < MR; i++) {
-            *packA = *a_ptr[i];
-            packA ++;
-            a_ptr[i] = a_ptr[i] + lda;
+        for (i = 0; i < RM; i++) {
+            if (a_ptr[i]) {
+                *packA = *a_ptr[i];
+                a_ptr[i] = a_ptr[i] + lda;
+            }
+            else {
+                *packA = 0;
+            }
+            packA++;
         }
     }
 };

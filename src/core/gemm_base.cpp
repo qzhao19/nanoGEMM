@@ -20,7 +20,7 @@ T* malloc_aligned(int64_t m, int64_t n, int64_t size) {
 }; 
 
 template <typename TA, int64_t RM, int64_t RN>
-void pack_matrix_A(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA *packA) {
+void pack_matrix_A_col(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA *packA) {
     int64_t i, p;
     TA *a_ptr[RM];
 
@@ -29,23 +29,42 @@ void pack_matrix_A(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA 
             a_ptr[i] = &A[offset + i];
         }
         else {
-            a_ptr[i] = nullptr;
+            a_ptr[i] = &A[offset + 0];
         }
     }
 
     for (p = 0; p < k; p++) {
         for (i = 0; i < RM; i++) {
-            if (a_ptr[i]) {
-                *packA = *a_ptr[i];
-                a_ptr[i] = a_ptr[i] + lda;
-            }
-            else {
-                *packA = 0;
-            }
+            *packA = *a_ptr[i];
             packA++;
+            a_ptr[i] += lda;
         }
     }
 };
+
+template <typename TB, int64_t RM, int64_t RN>
+void pack_matrix_B(int64_t k, int64_t n, TB *B, int64_t ldb, int64_t offset, TB *packB) {
+    int64_t j, p;
+    TB *b_ptr[RN];
+
+    for (j = 0; j < RN; ++j) {
+        if (j < n) {
+            b_ptr[j] = &B[ldb * (offset + j)];
+        }
+        else {
+            b_ptr[j] = &B[ldb * (offset + 0)];
+        }
+    }
+
+    for (p = 0; p < k; p++) {
+        for (j = 0; j < RN; j++) {
+            *packB = b_ptr[j][p];
+            packB++;
+        }
+    }
+}
+
+
 
 }
 }

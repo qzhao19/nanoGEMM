@@ -1,6 +1,5 @@
-#ifndef X86_KERNELS_HPP_
-#define X86_KERNELS_HPP_
-
+#ifndef GEMM_KERNELS_HPP_
+#define GEMM_KERNELS_HPP_
 
 #include <cmath>
 #include <cstdint>
@@ -9,7 +8,6 @@
 
 namespace gemm {
 namespace detail {
-
 
 #if defined(__SSE__)
 #include <smmintrin.h>
@@ -115,18 +113,6 @@ template <>
 inline __m256 set1<__m256>(float x) { return _mm256_set1_ps(x); }
 #endif
 
-template <int64_t MR = 4, int64_t NR = 4>
-inline void AddDot_4x4_kernel(int64_t k, float *a, float *b, float *c, int64_t ldc);
-
-template <int64_t MR = 8, int64_t NR = 4>
-inline void AddDot_4x4_kernel(int64_t k, float *a, float *b, float *c, int64_t ldc);
-
-template <int64_t MR = 4, int64_t NR = 4>
-inline void AddDot_4x4_kernel(int64_t k, double *a, double *b, double *c, int64_t ldc);
-
-template <int64_t MR = 8, int64_t NR = 4>
-inline void AddDot_4x4_kernel(int64_t k, double *a, double *b, double *c, int64_t ldc);
-
 }
 }
-#endif // X86_KERNELS_HPP_
+#endif // GEMM_KERNELS_HPP_

@@ -1,7 +1,7 @@
 #ifndef X86_GEMM_8X4_KERNEL_HPP_
 #define X86_GEMM_8X4_KERNEL_HPP_
 
-#include <gemm_kernels.hpp>
+#include <arch/gemm_kernels.hpp>
 
 namespace gemm {
 namespace detail {

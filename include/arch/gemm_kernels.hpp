@@ -6,9 +6,6 @@
 #include <cstring>
 #include <new>
 
-namespace gemm {
-namespace detail {
-
 #if defined(__SSE__)
 #include <smmintrin.h>
 #endif
@@ -16,6 +13,9 @@ namespace detail {
 #if defined(__AVX2__)
 #include <immintrin.h> 
 #endif
+
+namespace gemm {
+namespace detail {
 
 // 
 #if defined(__SSE__)

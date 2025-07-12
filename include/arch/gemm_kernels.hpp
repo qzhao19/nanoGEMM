@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <new>
 
 #if defined(__SSE__)
@@ -112,6 +113,9 @@ inline __m128 set1<__m128>(float x) { return _mm_set1_ps(x); }
 template <>
 inline __m256 set1<__m256>(float x) { return _mm256_set1_ps(x); }
 #endif
+
+template <typename TA, typename TB, typename TC, int RM, int RN>
+using MicroKernelType = std::function<void(int, TA*, TB*, TC*, int)>;
 
 }
 }

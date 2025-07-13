@@ -5,10 +5,10 @@ namespace detail {
 
 template <int64_t RM = 4, int64_t RN = 4>
 inline void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ldc) {
-    register float c_00_reg, c_01_reg, c_02_reg, c_03_reg;
-    register float c_10_reg, c_11_reg, c_12_reg, c_13_reg;
-    register float c_20_reg, c_21_reg, c_22_reg, c_23_reg;
-    register float c_30_reg, c_31_reg, c_32_reg, c_33_reg;
+    float c_00_reg, c_01_reg, c_02_reg, c_03_reg;
+    float c_10_reg, c_11_reg, c_12_reg, c_13_reg;
+    float c_20_reg, c_21_reg, c_22_reg, c_23_reg;
+    float c_30_reg, c_31_reg, c_32_reg, c_33_reg;
 
     c_00_reg = 0.0; c_01_reg = 0.0; c_02_reg = 0.0; c_03_reg = 0.0;
     c_10_reg = 0.0; c_11_reg = 0.0; c_12_reg = 0.0; c_13_reg = 0.0;
@@ -18,16 +18,16 @@ inline void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int
     int p;
     for (p = 0; p < k; p++) {
         // pre-load A-row to register A(i, p) = A[j * RM + i]
-        register float a_0p_reg = a[p * RM + 0];
-        register float a_1p_reg = a[p * RM + 1];
-        register float a_2p_reg = a[p * RM + 2];
-        register float a_3p_reg = a[p * RM + 3];
+        float a_0p_reg = a[p * RM + 0];
+        float a_1p_reg = a[p * RM + 1];
+        float a_2p_reg = a[p * RM + 2];
+        float a_3p_reg = a[p * RM + 3];
 
         // pre-load B-column to register B(p, j) = B[j * RN + i]
-        register float b_p0_reg = b[0 * RN + p];
-        register float b_p1_reg = b[1 * RN + p]; 
-        register float b_p2_reg = b[2 * RN + p];
-        register float b_p3_reg = b[3 * RN + p];
+        float b_p0_reg = b[0 * RN + p];
+        float b_p1_reg = b[1 * RN + p]; 
+        float b_p2_reg = b[2 * RN + p];
+        float b_p3_reg = b[3 * RN + p];
 
         // 1st row
         c_00_reg += a_0p_reg * b_p0_reg;
@@ -63,10 +63,10 @@ inline void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int
 
 template <int64_t RM = 4, int64_t RN = 4>
 inline void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_t ldc) {
-    register double c_00_reg, c_01_reg, c_02_reg, c_03_reg;
-    register double c_10_reg, c_11_reg, c_12_reg, c_13_reg;
-    register double c_20_reg, c_21_reg, c_22_reg, c_23_reg;
-    register double c_30_reg, c_31_reg, c_32_reg, c_33_reg;
+    double c_00_reg, c_01_reg, c_02_reg, c_03_reg;
+    double c_10_reg, c_11_reg, c_12_reg, c_13_reg;
+    double c_20_reg, c_21_reg, c_22_reg, c_23_reg;
+    double c_30_reg, c_31_reg, c_32_reg, c_33_reg;
 
     c_00_reg = 0.0; c_01_reg = 0.0; c_02_reg = 0.0; c_03_reg = 0.0;
     c_10_reg = 0.0; c_11_reg = 0.0; c_12_reg = 0.0; c_13_reg = 0.0;
@@ -76,16 +76,16 @@ inline void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c,
     int p;
     for (p = 0; p < k; p++) {
         // pre-load A-row to register A(i, p) = A[j * RM + i]
-        register double a_0p_reg = a[p * RM + 0];
-        register double a_1p_reg = a[p * RM + 1];
-        register double a_2p_reg = a[p * RM + 2];
-        register double a_3p_reg = a[p * RM + 3];
+        double a_0p_reg = a[p * RM + 0];
+        double a_1p_reg = a[p * RM + 1];
+        double a_2p_reg = a[p * RM + 2];
+        double a_3p_reg = a[p * RM + 3];
 
         // pre-load B-column to register B(p, j) = B[j * RN + i]
-        register double b_p0_reg = b[0 * RN + p];
-        register double b_p1_reg = b[1 * RN + p]; 
-        register double b_p2_reg = b[2 * RN + p];
-        register double b_p3_reg = b[3 * RN + p];
+        double b_p0_reg = b[0 * RN + p];
+        double b_p1_reg = b[1 * RN + p]; 
+        double b_p2_reg = b[2 * RN + p];
+        double b_p3_reg = b[3 * RN + p];
 
         // 1st row
         c_00_reg += a_0p_reg * b_p0_reg;

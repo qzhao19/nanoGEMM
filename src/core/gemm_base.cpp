@@ -20,9 +20,9 @@ T* malloc_aligned(int64_t m, int64_t n, int64_t size) {
 }; 
 
 template <typename TA, int64_t RM, int64_t RN>
-void pack_matrix_A(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA *packA) {
+void pack_matrix_A(int64_t m, int64_t k, const TA *A, int64_t lda, int64_t offset, TA *packA) {
     int64_t i, p;
-    TA *a_ptr[RM];
+    const TA *a_ptr[RM];
 
     for (i = 0; i < RM; ++i) {
         if (i < m) {
@@ -43,9 +43,9 @@ void pack_matrix_A(int64_t m, int64_t k, TA *A, int64_t lda, int64_t offset, TA 
 };
 
 template <typename TB, int64_t RM, int64_t RN>
-void pack_matrix_B(int64_t k, int64_t n, TB *B, int64_t ldb, int64_t offset, TB *packB) {
+void pack_matrix_B(int64_t k, int64_t n, const TB *B, int64_t ldb, int64_t offset, TB *packB) {
     int64_t j, p;
-    TB *b_ptr[RN];
+    const TB *b_ptr[RN];
 
     for (j = 0; j < RN; ++j) {
         if (j < n) {
@@ -63,6 +63,15 @@ void pack_matrix_B(int64_t k, int64_t n, TB *B, int64_t ldb, int64_t offset, TB 
         }
     }
 };
+
+template float* gemm::detail::malloc_aligned<float>(int64_t, int64_t, int64_t);
+template double* gemm::detail::malloc_aligned<double>(int64_t, int64_t, int64_t);
+
+template void gemm::detail::pack_matrix_A<float, 4, 4>(int64_t, int64_t, const float*, int64_t, int64_t, float*);
+template void gemm::detail::pack_matrix_A<double, 4, 4>(int64_t, int64_t, const double*, int64_t, int64_t, double*);
+
+template void gemm::detail::pack_matrix_B<float, 4, 4>(int64_t, int64_t, const float*, int64_t, int64_t, float*);
+template void gemm::detail::pack_matrix_B<double, 4, 4>(int64_t, int64_t, const double*, int64_t, int64_t, double*);
 
 }
 }

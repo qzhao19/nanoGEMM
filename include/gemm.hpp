@@ -1,14 +1,15 @@
 #ifndef GEMM_HPP_
 #define GEMM_HPP_
 
+#include <algorithm>
 #include <core/gemm_base.hpp>
 #include <arch/gemm_kernels.hpp>
 
 namespace gemm {
 
 template <typename TA, typename TB, typename TC, 
-          int64_t CM, int64_t CK, int64_t CN,
-          int64_t RM, int64_t RN>
+          int64_t RM, int64_t RN,
+          int64_t CM = 72, int64_t CK = 256, int64_t CN = 2048>
 class GEMM {
 private:
     const TA *const A_;

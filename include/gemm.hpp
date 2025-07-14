@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <core/gemm_base.hpp>
 #include <arch/gemm_kernels.hpp>
+#include <arch/x86/gemm_4x4_kernel.hpp>
 
 namespace gemm {
 
@@ -27,7 +28,9 @@ public:
          TC *C, int64_t ldc) :
             A_(A), lda_(lda), 
             B_(B), ldb_(ldb), 
-            C_(C), ldc_(ldc) {};
+            C_(C), ldc_(ldc) {
+        micro_kernel_ = gemm::detail::AddDot_4x4_kernel<TA, TB, TC>;
+    };
     ~GEMM() = default;
     
     void multiply(int64_t m, int64_t n, int64_t k);

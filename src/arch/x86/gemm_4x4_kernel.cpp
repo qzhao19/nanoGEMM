@@ -4,7 +4,7 @@ namespace gemm {
 namespace detail {
 
 template <int64_t RM = 4, int64_t RN = 4>
-inline void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ldc) {
+void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ldc) {
     float c_00_reg, c_01_reg, c_02_reg, c_03_reg;
     float c_10_reg, c_11_reg, c_12_reg, c_13_reg;
     float c_20_reg, c_21_reg, c_22_reg, c_23_reg;
@@ -62,7 +62,7 @@ inline void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int
 };
 
 template <int64_t RM = 4, int64_t RN = 4>
-inline void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_t ldc) {
+void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_t ldc) {
     double c_00_reg, c_01_reg, c_02_reg, c_03_reg;
     double c_10_reg, c_11_reg, c_12_reg, c_13_reg;
     double c_20_reg, c_21_reg, c_22_reg, c_23_reg;
@@ -120,7 +120,7 @@ inline void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c,
 };
 
 template <typename TA, typename TB, typename TC, int64_t RM = 4, int64_t RN = 4>
-inline void AddDot_4x4_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc) {
+void AddDot_4x4_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc) {
     if constexpr (std::is_same_v<TA, float> && 
                   std::is_same_v<TB, float> && 
                   std::is_same_v<TC, float>) {
@@ -132,6 +132,9 @@ inline void AddDot_4x4_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc) {
         AddDot_4x4_kernel_double<RM, RN>(k, a, b, c, ldc);
     }
 };
+
+template void gemm::detail::AddDot_4x4_kernel<float, float, float, 4, 4>(int64_t, float*, float*, float*, int64_t);
+template void gemm::detail::AddDot_4x4_kernel<double, double, double, 4, 4>(int64_t, double*, double*, double*, int64_t);
 
 }
 }

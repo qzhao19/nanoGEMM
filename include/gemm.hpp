@@ -20,7 +20,12 @@ private:
     const int64_t lda_;
     const int64_t ldb_;
     const int64_t ldc_;
+    
     gemm::detail::MicroKernelType<TA, TB, TC, RM, RN> micro_kernel_;
+
+    void pack_matrix_A(int64_t m, int64_t k, const TA *A, TA *packA, int64_t offset);
+
+    void pack_matrix_B(int64_t k, int64_t n, const TB *B, TB *packB, int64_t offset);
 
 public:
     GEMM(const TA *A, int64_t lda, 

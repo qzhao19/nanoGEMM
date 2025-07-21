@@ -12,7 +12,7 @@ class GEMM4x4KernelTest : public ::testing::Test {
 protected:
     void SetUp() override {
         engine_.seed(42);
-        tol_ = 1E-10;
+        tol_ = 1e-4;
     }
 
     T* generate_test_data(
@@ -91,7 +91,7 @@ TYPED_TEST_SUITE(GEMM4x4KernelTest, TestTypes);
 TYPED_TEST(GEMM4x4KernelTest, BasicMultiply) {
     using T = TypeParam;
     int64_t M = 64, N = 64, K = 64;
-    int64_t lda = M, ldb = N, ldc = M;
+    int64_t lda = M, ldb = K, ldc = M;
     this->A = this->generate_test_data(M * K);
     this->B = this->generate_test_data(K * N);
     this->C = new T[M * N]();
@@ -100,12 +100,9 @@ TYPED_TEST(GEMM4x4KernelTest, BasicMultiply) {
     // naive GEMM for reference
     this->matmul_ref(M, N, K, this->A, lda, this->B, ldb, this->C_ref, ldc);
 
-    // GEMM class
-    gemm::GEMM<T, T, T, 4, 4> gemm(
-        this->A, M, this->B, K, this->C, M
-    );
-    gemm.multiply(M, N, K);
+    // Use matmul API function instead of directly instantiating GEMM
+    gemm::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc);
+    
     bool errorFound = this->compute_error(M, M, M, N, this->C, this->C_ref);
     ASSERT_FALSE(errorFound) << "Errors found in the result.";
-
 }

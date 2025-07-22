@@ -7,6 +7,11 @@
 #include <cmath>
 #include <gemm.hpp>
 
+
+// #define A( i, j )     A[ (j)*lda + (i) ]
+// #define B( i, j )     B[ (j)*ldb + (i) ]
+// #define C( i, j )     C[ (j)*ldc + (i) ]
+
 template<typename T>
 class GEMM4x4KernelTest : public ::testing::Test {
 protected:
@@ -15,30 +20,55 @@ protected:
         tol_ = 1e-4;
     }
 
-    T* generate_test_data(
-        std::size_t size, 
+    void generate_test_data(
+        int64_t m,
+        int64_t n,
+        int64_t k, 
+        int64_t lda,
+        int64_t ldb,
+        int64_t ldc,
         T min = -1, T max = 1) {
         
+        A = new T[k * lda];
+        B = new T[n * ldb];
+        C = new T[n * ldc];
+        C_ref = new T[n * ldc];
+
+        int64_t i, j, p;
         std::uniform_real_distribution<T> dist(min, max);
-        T* arr = new T[size];
-        for (std::size_t i = 0; i < size; ++i) {
-            arr[i] = dist(engine_);
+
+        for (p = 0; p < k; ++p) {
+            for (i = 0; i < m; ++i) {
+                A[p * lda + i] = dist(engine_);	
+            }
         }
-        return arr;
+
+        for (j = 0; j < n; ++j) {
+            for (p = 0; p < k; ++p) {
+                B[j * ldb + p] = dist(engine_);
+            }
+        }
+
+        for (j = 0; j < n; ++j) {
+            for (i = 0; i < m; ++i) {
+                C_ref[j * ldc + i] = static_cast<T>(0.0);	
+                    C[j * ldc + i] = static_cast<T>(0.0);	
+            }
+        }
     }
 
     void matmul_ref(
-        int m,
-        int n,
-        int k,
+        int64_t m,
+        int64_t n,
+        int64_t k,
         T *A,
-        int lda,
+        int64_t lda,
         T *B,
-        int ldb,
+        int64_t ldb,
         T *C,
-        int ldc) {
+        int64_t ldc) {
         
-        int    i, j, p;
+        int64_t i, j, p;
         for (i = 0; i < m; i ++) {
             for (j = 0; j < n; j ++) {
                 for (p = 0; p < k; p ++) {
@@ -49,19 +79,19 @@ protected:
     }
 
     bool compute_error(
-        int ldc,
-        int ldc_ref,
-        int m,
-        int n,
+        int64_t ldc,
+        int64_t ldc_ref,
+        int64_t m,
+        int64_t n,
         T *C,
         T *C_ref) {
 
         bool hasError = false;
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
+        for (int64_t i = 0; i < m; ++i) {
+            for (int64_t j = 0; j < n; ++j) {
                 T diff = std::fabs(C[i + j * ldc] - C_ref[i + j * ldc_ref]);
                 if (diff > tol_) {
-                    std::printf("C[ %d ][ %d ] != C_ref, %E, %E\n", i, j, C[i + j * ldc], C_ref[i + j * ldc_ref]);
+                    std::printf("C[ %ld ][ %ld ] != C_ref, %E, %E\n", i, j, C[i + j * ldc], C_ref[i + j * ldc_ref]);
                     hasError = true;
                 }
             }
@@ -92,11 +122,8 @@ TYPED_TEST(GEMM4x4KernelTest, BasicMultiply) {
     using T = TypeParam;
     int64_t M = 64, N = 64, K = 64;
     int64_t lda = M, ldb = K, ldc = M;
-    this->A = this->generate_test_data(M * K);
-    this->B = this->generate_test_data(K * N);
-    this->C = new T[M * N]();
-    this->C_ref = new T[M * N]();
-
+    this->generate_test_data(M, N, K, lda, ldb, ldc);
+    
     // naive GEMM for reference
     this->matmul_ref(M, N, K, this->A, lda, this->B, ldb, this->C_ref, ldc);
 

@@ -96,7 +96,7 @@ public:
 
                 // packing sub-matrix B 
                 for (j = 0; j < min_n; j += RN) {
-                    gemm::detail::pack_matrix_B(
+                    pack_matrix_B(
                         min_k, 
                         std::min(min_n - j, RN),
                         &B_[pc],
@@ -110,7 +110,7 @@ public:
                     
                     // packing sub-matrix A
                     for (i = 0; i < min_m; i+= RM) {
-                        gemm::detail::pack_matrix_A(
+                        pack_matrix_A(
                             std::min(min_m - i, RM), 
                             min_k, 
                             &A_[pc * lda_], 
@@ -133,6 +133,8 @@ public:
                 }
             }
         }
+        free(packA);
+        free(packB);
     };
 }; 
 

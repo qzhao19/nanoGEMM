@@ -119,13 +119,13 @@ public:
                         );
                     }
 
-                    for (j = 0; j < n; j += RN) {
-                        for (i = 0; i < m; i += RM) {
+                    for (j = 0; j < min_n; j += RN) {
+                        for (i = 0; i < min_m; i += RM) {
                             micro_kernel_(
-                                k,
-                                &packA[i * k],
-                                &packB[j * k],
-                                &C_[j * ldc_ + i],
+                                min_k,
+                                &packA[i * min_k],
+                                &packB[j * min_k],
+                                &C_[(jc + j) * ldc_ + (ic + i)],
                                 ldc_
                             );
                         }

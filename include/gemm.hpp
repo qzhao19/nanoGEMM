@@ -37,11 +37,11 @@ private:
             }
         }
 
-        for (p = 0; p < k; p++) {
-            for (i = 0; i < RM; i++) {
+        for (p = 0; p < k; ++p) {
+            for (i = 0; i < RM; ++i) {
                 *packA = *a_ptr[i];
                 packA++;
-                a_ptr[i] += lda_;
+                a_ptr[i] = a_ptr[i] + lda_;
             }
         }
     };
@@ -61,8 +61,7 @@ private:
 
         for (p = 0; p < k; p++) {
             for (j = 0; j < RN; j++) {
-                *packB = b_ptr[j][p];
-                packB++;
+                *packB++ = *b_ptr[j]++;
             }
         }
     };
@@ -81,7 +80,7 @@ public:
     void multiply(int64_t m, int64_t n, int64_t k) {
         int64_t i, j, p;
         int64_t ic, jc, pc;
-        int64_t min_m, min_k, min_n;
+        int64_t ib, jb, pb;
 
         TA *packA; 
         TB *packB;
@@ -89,42 +88,41 @@ public:
         packB = gemm::detail::malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
 
         for (jc = 0; jc < n; jc += CN) {
-            min_n = std::min(n - jc, CN);
+            jb = std::min(n - jc, CN);
 
             for (pc = 0; pc < k; pc += CK) {
-                min_k = std::min(k - pc, CK);
+                pb = std::min(k - pc, CK);
 
                 // packing sub-matrix B 
-                for (j = 0; j < min_n; j += RN) {
+                for (j = 0; j < jb; j += RN) {
                     pack_matrix_B(
-                        min_k, 
-                        std::min(min_n - j, RN),
+                        pb, 
+                        std::min(jb - j, RN),
                         &B_[pc],
-                        &packB[j * min_k],
+                        &packB[j * pb],
                         jc + j
                     );
                 }
                 
                 for (ic = 0; ic < m; ic += CM) {
-                    min_m = std::min(m - ic, CM);
-                    
+                    ib = std::min(m - ic, CM);
                     // packing sub-matrix A
-                    for (i = 0; i < min_m; i+= RM) {
+                    for (i = 0; i < ib; i+= RM) {
                         pack_matrix_A(
-                            std::min(min_m - i, RM), 
-                            min_k, 
+                            std::min(ib - i, RM), 
+                            pb, 
                             &A_[pc * lda_], 
-                            &packA[0 * CM * min_k + i * min_k],
+                            &packA[0 * CM * pb + i * pb],
                             ic + i
                         );
                     }
 
-                    for (j = 0; j < min_n; j += RN) {
-                        for (i = 0; i < min_m; i += RM) {
+                    for (j = 0; j < jb; j += RN) {
+                        for (i = 0; i < ib; i += RM) {
                             micro_kernel_(
-                                min_k,
-                                &packA[i * min_k],
-                                &packB[j * min_k],
+                                pb,
+                                &packA[i * pb],
+                                &packB[j * pb],
                                 &C_[(jc + j) * ldc_ + (ic + i)],
                                 ldc_
                             );

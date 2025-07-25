@@ -24,44 +24,66 @@ private:
     
     gemm::detail::MicroKernelType<TA, TB, TC, RM, RN> micro_kernel_;
 
-    void pack_matrix_A(int64_t m, int64_t k, const TA *A, TA *packA, int64_t offset) {  
+    void pack_matrix_A(
+        int64_t m, int64_t k, 
+        int64_t row_offset, int64_t col_offset, 
+        const TA *A, TA *packed_A) {  
+        
         int64_t i, p;
         const TA *a_ptr[RM];
 
         for (i = 0; i < RM; ++i) {
             if (i < m) {
-                a_ptr[i] = &A[offset + i];
+                a_ptr[i] = &A[(col_offset + 0) * lda_ + (row_offset + i)];
             }
             else {
-                a_ptr[i] = &A[offset + 0];
+                a_ptr[i] = &A[(col_offset + 0) * lda_ + (row_offset + 0)];
             }
         }
 
         for (p = 0; p < k; ++p) {
+            // define a local var to store row elements
+            TA a_val[RM];
             for (i = 0; i < RM; ++i) {
-                *packA = *a_ptr[i];
-                packA++;
-                a_ptr[i] = a_ptr[i] + lda_;
+                // cache each row elements
+                // move ptr to next col 
+                a_val[i] = *a_ptr[i];
+                a_ptr[i] += lda_;
+            }
+            // then write to the pack buffer all at once
+            for (i = 0; i < RM; ++i) {
+                *packed_A++ = a_val[i];
             }
         }
     };
 
-    void pack_matrix_B(int64_t k, int64_t n, const TB *B, TB *packB, int64_t offset) {
+    void pack_matrix_B(
+        int64_t k, int64_t n, 
+        int64_t row_offset, int64_t col_offset, 
+        const TB *B, TB *packed_B) {
+        
         int64_t j, p;
         const TB *b_ptr[RN];
 
         for (j = 0; j < RN; ++j) {
             if (j < n) {
-                b_ptr[j] = &B[ldb_ * (offset + j)];
+                b_ptr[j] = &B[(col_offset + j) * ldb_ + row_offset];
             }
             else {
-                b_ptr[j] = &B[ldb_ * (offset + 0)];
+                b_ptr[j] = &B[(col_offset + 0) * ldb_ + row_offset];
             }
         }
 
         for (p = 0; p < k; p++) {
+            // read all values into a local array (in the cache)
+            TB b_val[RN];
             for (j = 0; j < RN; j++) {
-                *packB++ = *b_ptr[j]++;
+                b_val[j] = *b_ptr[j];
+                b_ptr[j]++;
+            }
+            // write to the pack buffer all at once
+            for (j = 0; j < RN; j++) {
+                *packed_B++ = b_val[j];
             }
         }
     };
@@ -96,11 +118,12 @@ public:
                 // packing sub-matrix B 
                 for (j = 0; j < jb; j += RN) {
                     pack_matrix_B(
-                        pb, 
-                        std::min(jb - j, RN),
-                        &B_[pc],
-                        &packB[j * pb],
-                        jc + j
+                        pb,                      // number of rows to actually pack
+                        std::min(jb - j, RN),    // number of columns to actually pack
+                        pc,                      // global row offset
+                        jc + j,                  // global columns offset
+                        B_,                      // original matrix pointer
+                        &packB[j * pb]           // packed buffer
                     );
                 }
                 
@@ -109,11 +132,12 @@ public:
                     // packing sub-matrix A
                     for (i = 0; i < ib; i+= RM) {
                         pack_matrix_A(
-                            std::min(ib - i, RM), 
-                            pb, 
-                            &A_[pc * lda_], 
-                            &packA[0 * CM * pb + i * pb],
-                            ic + i
+                            std::min(ib - i, RM),   // number of rows to actually pack
+                            pb,                     // umber of columns to actually pack
+                            ic + i,                 // global row offset
+                            pc,                     // global columns offset
+                            A_,                     // original matrix pointer
+                            &packA[i * pb]          // packed buffer position
                         );
                     }
 

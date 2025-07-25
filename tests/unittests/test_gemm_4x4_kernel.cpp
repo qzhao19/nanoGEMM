@@ -7,10 +7,9 @@
 #include <cmath>
 #include <gemm.hpp>
 
-
-// #define A( i, j )     A[ (j)*lda + (i) ]
-// #define B( i, j )     B[ (j)*ldb + (i) ]
-// #define C( i, j )     C[ (j)*ldc + (i) ]
+// A(i, j)     A[(j)*lda + (i)]
+// B(i, j)     B[(j)*ldb + (i)]
+// C(i, j)     C[(j)*ldc + (i)]
 
 template<typename T>
 class GEMM4x4KernelTest : public ::testing::Test {
@@ -120,7 +119,7 @@ TYPED_TEST_SUITE(GEMM4x4KernelTest, TestTypes);
 
 TYPED_TEST(GEMM4x4KernelTest, BasicMultiply) {
     using T = TypeParam;
-    int64_t M = 64, N = 64, K = 64;
+    int64_t M = 128, N = 128, K = 128;
     int64_t lda = M, ldb = K, ldc = M;
     this->generate_test_data(M, N, K, lda, ldb, ldc);
     

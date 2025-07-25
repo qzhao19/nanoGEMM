@@ -114,8 +114,22 @@ template <>
 inline __m256 set1<__m256>(float x) { return _mm256_set1_ps(x); }
 #endif
 
-template <typename TA, typename TB, typename TC, int RM, int RN>
-using MicroKernelType = std::function<void(int, TA*, TB*, TC*, int)>;
+template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
+using MicroKernelType = std::function<void(int64_t, TA*, TB*, TC*, int64_t)>;
+
+template <typename T>
+struct MicroKernelCtx {
+    T *next;
+    char *flag;
+    int64_t k;
+    int64_t m;
+    int64_t n;
+};
+
+template <typename T>
+using MicroKernelCtxType = MicroKernelCtx<T>;
+
+
 
 }
 }

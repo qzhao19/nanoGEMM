@@ -10,7 +10,6 @@
 // A(i, j)     A[(j)*lda + (i)]
 // B(i, j)     B[(j)*ldb + (i)]
 // C(i, j)     C[(j)*ldc + (i)]
-
 template<typename T>
 class GEMM4x4KernelTest : public ::testing::Test {
 protected:
@@ -117,9 +116,26 @@ protected:
 using TestTypes = ::testing::Types<float, double>;
 TYPED_TEST_SUITE(GEMM4x4KernelTest, TestTypes);
 
-TYPED_TEST(GEMM4x4KernelTest, BasicMultiply) {
+TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyOddSize) {
     using T = TypeParam;
-    int64_t M = 128, N = 128, K = 128;
+    int64_t M = 251, N = 173, K = 251;
+    int64_t lda = M, ldb = K, ldc = M;
+    this->generate_test_data(M, N, K, lda, ldb, ldc);
+    
+    // naive GEMM for reference
+    this->matmul_ref(M, N, K, this->A, lda, this->B, ldb, this->C_ref, ldc);
+
+    // Use matmul API function instead of directly instantiating GEMM
+    gemm::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc);
+    
+    bool errorFound = this->compute_error(M, M, M, N, this->C, this->C_ref);
+    ASSERT_FALSE(errorFound) << "Errors found in the result.";
+}
+
+
+TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyEvenSize) {
+    using T = TypeParam;
+    int64_t M = 256, N = 128, K = 256;
     int64_t lda = M, ldb = K, ldc = M;
     this->generate_test_data(M, N, K, lda, ldb, ldc);
     

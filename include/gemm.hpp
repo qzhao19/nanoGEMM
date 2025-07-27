@@ -45,11 +45,17 @@ private:
             // define a local var to store row elements
             TA a_val[RM];
             for (i = 0; i < RM; ++i) {
-                // cache each row elements
-                // move ptr to next col 
-                a_val[i] = *a_ptr[i];
-                a_ptr[i] += lda_;
+                if (i < m) {
+                    // cache each row elements
+                    // move ptr to next col 
+                    a_val[i] = *a_ptr[i];
+                    a_ptr[i] += lda_;
+                }
+                else {
+                    a_val[i] = 0;
+                }
             }
+            
             // then write to the pack buffer all at once
             for (i = 0; i < RM; ++i) {
                 *packed_A++ = a_val[i];
@@ -78,8 +84,14 @@ private:
             // read all values into a local array (in the cache)
             TB b_val[RN];
             for (j = 0; j < RN; j++) {
-                b_val[j] = *b_ptr[j];
-                b_ptr[j]++;
+                if (j < n) {  // only access valid elements
+                    b_val[j] = *b_ptr[j];
+                    b_ptr[j]++;
+                }
+                else {  // add proper zero padding
+                    b_val[j] = 0;
+                    // don't increment pointer for padding
+                }
             }
             // write to the pack buffer all at once
             for (j = 0; j < RN; j++) {

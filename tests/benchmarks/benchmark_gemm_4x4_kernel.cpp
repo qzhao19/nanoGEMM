@@ -6,6 +6,24 @@
 #include <cmath>
 #include <gemm.hpp>
 
+// Reference matrix multiplication implementation for benchmarking
+template<typename T>
+void matmul_ref(int64_t m, int64_t n, int64_t k, 
+                const T* A, int64_t lda, 
+                const T* B, int64_t ldb,
+                T* C, int64_t ldc) {
+    // Simple triple-loop implementation
+    for (int64_t j = 0; j < n; ++j) {
+        for (int64_t i = 0; i < m; ++i) {
+            T sum = static_cast<T>(0.0);
+            for (int64_t p = 0; p < k; ++p) {
+                sum += A[p * lda + i] * B[j * ldb + p];
+            }
+            C[j * ldc + i] = sum;
+        }
+    }
+}
+
 template<typename T>
 class GEMM4x4Benchmark {
 public:
@@ -25,6 +43,12 @@ public:
     void run_benchmark() {
         // Run the actual GEMM operation
         gemm::matmul(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_);
+    }
+
+    // Add reference implementation method
+    void run_benchmark_ref() {
+        // Run the reference GEMM operation
+        matmul_ref(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_);
     }
 
 private:
@@ -67,7 +91,7 @@ private:
     std::mt19937 engine_;
 };
 
-// Benchmark function for float matrices
+// Benchmark function for optimized GEMM implementation
 template<typename T>
 static void BM_GEMM(benchmark::State& state) {
     const int64_t m = state.range(0);
@@ -89,7 +113,29 @@ static void BM_GEMM(benchmark::State& state) {
         benchmark::Counter::kIsRate);
 }
 
-// Define benchmark test cases for float
+// Benchmark function for reference GEMM implementation
+template<typename T>
+static void BM_GEMM_Ref(benchmark::State& state) {
+    const int64_t m = state.range(0);
+    const int64_t n = state.range(1);
+    const int64_t k = state.range(2);
+    
+    GEMM4x4Benchmark<T> benchmark(m, n, k);
+    
+    // Perform setup
+    for (auto _ : state) {
+        // This code gets timed
+        benchmark.run_benchmark_ref();
+    }
+    
+    // Report stats
+    state.SetItemsProcessed(static_cast<int64_t>(state.iterations()) * 2 * m * n * k);
+    state.counters["GFLOPS"] = benchmark::Counter(
+        static_cast<double>(state.iterations()) * 2 * m * n * k / 1e9,
+        benchmark::Counter::kIsRate);
+}
+
+// Define benchmark test cases for float (optimized)
 BENCHMARK_TEMPLATE(BM_GEMM, float)
     ->Args({256, 256, 256})  // Square matrix
     ->Args({512, 512, 512})  // Larger square matrix
@@ -98,13 +144,27 @@ BENCHMARK_TEMPLATE(BM_GEMM, float)
     ->Args({1000, 100, 500})  // Rectangular matrix
     ->Unit(benchmark::kMillisecond);
 
-// Define benchmark test cases for double
+// Define benchmark test cases for float (reference)
+BENCHMARK_TEMPLATE(BM_GEMM_Ref, float)
+    ->Args({256, 256, 256})
+    ->Args({512, 512, 512})
+    ->Args({251, 173, 251})  // Odd-sized matrix to compare with optimized
+    ->Unit(benchmark::kMillisecond);
+
+// Define benchmark test cases for double (optimized)
 BENCHMARK_TEMPLATE(BM_GEMM, double)
     ->Args({256, 256, 256})
     ->Args({512, 512, 512})
     ->Args({1024, 1024, 1024})
     ->Args({251, 173, 251})
     ->Args({1000, 100, 500})
+    ->Unit(benchmark::kMillisecond);
+
+// Define benchmark test cases for double (reference)
+BENCHMARK_TEMPLATE(BM_GEMM_Ref, double)
+    ->Args({256, 256, 256})
+    ->Args({512, 512, 512})
+    ->Args({251, 173, 251})
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();

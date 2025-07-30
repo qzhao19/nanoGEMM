@@ -103,12 +103,12 @@ private:
 public:
     GEMM(const TA *A, int64_t lda, 
          const TB *B, int64_t ldb, 
-         TC *C, int64_t ldc) :
+         TC *C, int64_t ldc,
+         gemm::detail::MicroKernelType<TA, TB, TC, RM, RN> micro_kernel) :
             A_(A), lda_(lda), 
             B_(B), ldb_(ldb), 
-            C_(C), ldc_(ldc) {
-        micro_kernel_ = gemm::detail::AddDot_4x4_kernel<TA, TB, TC>;
-    };
+            C_(C), ldc_(ldc)
+            micro_kernel_(micro_kernel) {};
     ~GEMM() = default;
     
     void multiply(int64_t m, int64_t n, int64_t k) {
@@ -174,11 +174,13 @@ public:
 
 }
 
+template<int64_t RM, int64_t RN>
 void matmul(int64_t m, int64_t n, int64_t k,
            const float *A, int64_t lda,
            const float *B, int64_t ldb,
            float *C, int64_t ldc);
 
+template<int64_t RM, int64_t RN>
 void matmul(int64_t m, int64_t n, int64_t k,
            const double *A, int64_t lda,
            const double *B, int64_t ldb,

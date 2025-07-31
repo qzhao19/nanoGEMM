@@ -2,9 +2,12 @@
 #define GEMM_HPP_
 
 #include <algorithm>
+#include <string>
 #include <core/gemm_base.hpp>
+#include <core/kernel_factory.hpp>
 #include <arch/gemm_kernels.hpp>
 #include <arch/x86/gemm_4x4_kernel.hpp>
+#include <arch/x86/gemm_8x4_kernel.hpp>
 
 namespace gemm {
 namespace detail {
@@ -174,17 +177,17 @@ public:
 
 }
 
-template<int64_t RM, int64_t RN>
 void matmul(int64_t m, int64_t n, int64_t k,
-           const float *A, int64_t lda,
-           const float *B, int64_t ldb,
-           float *C, int64_t ldc);
+            const float *A, int64_t lda,
+            const float *B, int64_t ldb,
+            float *C, int64_t ldc, 
+            const std::string &kernel);
 
-template<int64_t RM, int64_t RN>
 void matmul(int64_t m, int64_t n, int64_t k,
-           const double *A, int64_t lda,
-           const double *B, int64_t ldb,
-           double *C, int64_t ldc);
+            const double *A, int64_t lda,
+            const double *B, int64_t ldb,
+            double *C, int64_t ldc,
+            const std::string &kernel);
 
 } 
 #endif // GEMM_HPP_

@@ -1,70 +1,66 @@
 #include <gemm.hpp>
+#include <stdexcept>
 
 namespace gemm {
+namespace detail {
 
-template<int64_t RM, int64_t RN>
-void matmul(int64_t m, int64_t n, int64_t k, 
-           const float *A, int64_t lda,
-           const float *B, int64_t ldb, 
-           float *C, int64_t ldc) {
-    
-    // gemm::detail::GEMM<float, float, float, 4, 4> gemm_engine(A, lda, B, ldb, C, ldc);
-    // gemm_engine.multiply(m, n, k);
-    if constexpr (RM == 4 && RN == 4) {
-        // 使用4x4内核
-        gemm::detail::GEMM<float, float, float, 4, 4> 
-            gemm_engine(A, lda, B, ldb, C, ldc, gemm::detail::AddDot_4x4_kernel_float<4, 4>);
-        gemm_engine.multiply(m, n, k);
-    }
-    else if constexpr (RM == 8 && RN == 4) {
-        // 使用8x4内核
-        gemm::detail::GEMM<float, float, float, 8, 4> 
-            gemm_engine(A, lda, B, ldb, C, ldc, gemm::detail::AddDot_8x4_kernel_float<8, 4>);
-        gemm_engine.multiply(m, n, k);
-    }
-    else {
-        // 默认使用4x4内核
-        gemm::detail::GEMM<float, float, float, 4, 4> 
-            gemm_engine(A, lda, B, ldb, C, ldc, gemm::detail::AddDot_4x4_kernel_float<4, 4>);
-        gemm_engine.multiply(m, n, k);
-    }
+template<>
+void KernelFactory<float, float, float>::registerDefaultKernels() {
+    // register kernel
+    registerKernel<4, 4>("4x4", AddDot_4x4_kernel_float<4, 4>);
+    registerKernel<8, 4>("8x4", AddDot_8x4_kernel_float<8, 4>);
 }
 
-template<int64_t RM, int64_t RN>
+template<>
+void KernelFactory<double, double, double>::registerDefaultKernels() {
+    registerKernel<4, 4>("4x4", AddDot_4x4_kernel_double<4, 4>);
+    registerKernel<8, 4>("8x4", AddDot_8x4_kernel_double<8, 4>);
+}
+
+}
+
 void matmul(int64_t m, int64_t n, int64_t k,
-           const double *A, int64_t lda,
-           const double *B, int64_t ldb,
-           double *C, int64_t ldc) {
+            const float *A, int64_t lda,
+            const float *B, int64_t ldb,
+            float *C, int64_t ldc, 
+            const std::string &kernel) {
     
-    if constexpr (RM == 4 && RN == 4) {
-        // 对于double类型，主要使用4x4内核
-        gemm::detail::GEMM<double, double, double, 4, 4> 
-            gemm_engine(A, lda, B, ldb, C, ldc, gemm::detail::AddDot_4x4_kernel_double<4, 4>);
-        gemm_engine.multiply(m, n, k);
+    auto& factory = detail::KernelFactory<float, float, float>::getInstance();
+    
+    try {
+        auto executor = factory.createExecutor(kernel);
+        executor->multiply(m, n, k, A, lda, B, ldb, C, ldc);
     }
-    else if constexpr (RM == 8 && RN == 4) {
-        // double类型的8x4内核（如果实现了的话）
-        gemm::detail::GEMM<double, double, double, 8, 4> 
-            gemm_engine(A, lda, B, ldb, C, ldc, gemm::detail::AddDot_8x4_kernel_double<8, 4>);
-        gemm_engine.multiply(m, n, k);
-    }
-    else {
-        // 默认使用4x4内核
-        gemm::detail::GEMM<double, double, double, 4, 4> 
-            gemm_engine(A, lda, B, ldb, C, ldc, gemm::detail::AddDot_4x4_kernel_double<4, 4>);
-        gemm_engine.multiply(m, n, k);
+    catch (const std::runtime_error& e) {
+        #ifdef DEBUG
+        throw std::invalid_argument("Kernel creation failed: " + std::string(e.what()));
+        #else
+        auto executor = factory.createExecutor("4x4");
+        executor->multiply(m, n, k, A, lda, B, ldb, C, ldc);
+        #endif
     }
 }
 
-template void matmul<4, 4>(int64_t, int64_t, int64_t, 
-                          const float*, int64_t, const float*, int64_t, float*, int64_t);
-template void matmul<8, 4>(int64_t, int64_t, int64_t, 
-                          const float*, int64_t, const float*, int64_t, float*, int64_t);
+void matmul(int64_t m, int64_t n, int64_t k,
+            const double *A, int64_t lda,
+            const double *B, int64_t ldb,
+            double *C, int64_t ldc,
+            const std::string &kernel) {
+    
+    auto& factory = detail::KernelFactory<double, double, double>::getInstance();
+    
+    try {
+        auto executor = factory.createExecutor(kernel);
+        executor->multiply(m, n, k, A, lda, B, ldb, C, ldc);
+    }
+    catch (const std::runtime_error& e) {
+        #ifdef DEBUG
+        throw std::invalid_argument("Kernel creation failed: " + std::string(e.what()));
+        #else
+        auto executor = factory.createExecutor("4x4");
+        executor->multiply(m, n, k, A, lda, B, ldb, C, ldc);
+        #endif
+    }
+}
 
-template void matmul<4, 4>(int64_t, int64_t, int64_t, 
-                          const double*, int64_t, const double*, int64_t, double*, int64_t);
-
-template void matmul<8, 4>(int64_t, int64_t, int64_t, 
-                          const double*, int64_t, const double*, int64_t, double*, int64_t);
-
-} // gemm
+}  // namespace gemm

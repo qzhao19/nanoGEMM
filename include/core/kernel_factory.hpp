@@ -1,10 +1,11 @@
 #ifndef KERNEL_FACTORY_HPP_
 #define KERNEL_FACTORY_HPP_
 
-#include <unordered_map>
 #include <functional>
 #include <memory>
 #include <string>
+#include <stdexcept>
+#include <unordered_map>
 #include <vector>
 #include <arch/gemm_kernels.hpp>
 
@@ -14,7 +15,7 @@ namespace detail {
 // forward definition
 template <typename TA, typename TB, typename TC, 
           int64_t RM, int64_t RN,
-          int64_t CM = 72, int64_t CK = 256, int64_t CN = 2048>
+          int64_t CM, int64_t CK, int64_t CN>
 class GEMM;
 
 // abstract GEMM executor interface
@@ -29,7 +30,9 @@ public:
 };
 
 // concrete implementation of the GEMM executor
-template<typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
+template<typename TA, typename TB, typename TC, 
+         int64_t RM, int64_t RN, 
+         int64_t CM, int64_t CK, int64_t CN>
 class GEMMExecutorImpl : public GEMMExecutor<TA, TB, TC> {
 private:
     MicroKernelType<TA, TB, TC, RM, RN> kernel_;
@@ -42,7 +45,7 @@ public:
                  const TA *A, int64_t lda,
                  const TB *B, int64_t ldb,
                  TC *C, int64_t ldc) override {
-        GEMM<TA, TB, TC, RM, RN> gemm_engine(A, lda, B, ldb, C, ldc, kernel_);
+        GEMM<TA, TB, TC, RM, RN, CM, CK, CN> gemm_engine(A, lda, B, ldb, C, ldc, kernel_);
         gemm_engine.multiply(m, n, k);
     }
 };
@@ -65,11 +68,12 @@ public:
     }
     
     // registery kernel
-    template<int64_t RM, int64_t RN>
+    template<int64_t RM, int64_t RN, 
+             int64_t CM, int64_t CK, int64_t CN>
     void registerKernel(const std::string& name, 
                        MicroKernelType<TA, TB, TC, RM, RN> kernel) {
         creators_[name] = [kernel]() -> ExecutorPtr {
-            return std::make_unique<GEMMExecutorImpl<TA, TB, TC, RM, RN>>(kernel);
+            return std::make_unique<GEMMExecutorImpl<TA, TB, TC, RM, RN, CM, CK, CN>>(kernel);
         };
     }
     

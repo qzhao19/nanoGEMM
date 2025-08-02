@@ -173,6 +173,21 @@ inline void store(float *a, __m256 b) { _mm256_storeu_ps(a, b); }
 inline void store(double *a, __m256d b) { _mm256_storeu_pd(a, b); }
 #endif
 
+#if defined(__AVX2__)
+inline __m256 broadcast(float *x) { return _mm256_broadcast_ss(x); } 
+inline __m256d broadcast(double *x) { return _mm256_broadcast_sd(x); }
+#endif
+
+#if defined(__SSE__)
+inline __m128  shuffle(__m128 a, __m128 b, int imm8) { return _mm_shuffle_ps(a, b, imm8); } 
+inline __m128d  shuffle(__m128d a, __m128d b, int imm8) { return _mm_shuffle_pd(a, b, imm8); }
+#endif
+
+#if defined(__AVX2__)
+inline __m256 shuffle(__m256 a, __m256 b, const int imm8) { return _mm256_shuffle_ps(a, b, imm8); } 
+inline __m256d shuffle(__m256d a, __m256d b, const int imm8) { return _mm256_shuffle_pd(a, b, imm8); }
+#endif
+
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
 using MicroKernelType = std::function<void(int64_t, TA*, TB*, TC*, int64_t)>;
 

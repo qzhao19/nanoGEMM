@@ -14,7 +14,7 @@ namespace detail {
 
 template <typename TA, typename TB, typename TC, 
           int64_t RM, int64_t RN,
-          int64_t CM = 72, int64_t CK = 256, int64_t CN = 2048>
+          int64_t CM, int64_t CK, int64_t CN>
 class GEMM {
 private:
     const TA *const A_;
@@ -87,11 +87,13 @@ private:
             // read all values into a local array (in the cache)
             TB b_val[RN];
             for (j = 0; j < RN; j++) {
-                if (j < n) {  // only access valid elements
+                if (j < n) {  
+                    // only access valid elements
                     b_val[j] = *b_ptr[j];
                     b_ptr[j]++;
                 }
-                else {  // add proper zero padding
+                else {  
+                    // add proper zero padding
                     b_val[j] = 0;
                     // don't increment pointer for padding
                 }
@@ -110,7 +112,7 @@ public:
          gemm::detail::MicroKernelType<TA, TB, TC, RM, RN> micro_kernel) :
             A_(A), lda_(lda), 
             B_(B), ldb_(ldb), 
-            C_(C), ldc_(ldc)
+            C_(C), ldc_(ldc),
             micro_kernel_(micro_kernel) {};
     ~GEMM() = default;
     

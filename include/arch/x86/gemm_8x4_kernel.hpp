@@ -103,7 +103,10 @@ void AddDot_8x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
 template <int64_t RM = 8, int64_t RN = 4>
 void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_t ldc) {
     int64_t i;
-    double alpha = 1.0, beta = 1.0;
+    double alpha_val = 1.0, beta_val = 1.0;
+    double *alpha, *beta;
+    alpha = &alpha_val;
+    beta  = &beta_val;
 
     double *c0_3_0, *c0_3_1, *c0_3_2, *c0_3_3;
     double *c4_7_0, *c4_7_1, *c4_7_2, *c4_7_3;
@@ -116,6 +119,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
 
     // Temporary variables for prefetching and calculations
     __m256d A0_3_ymm, A4_7_ymm;
+    // next_a0_3_ymm, nex_a4_7_ymm, next_b0_ymm
     __m256d B0_ymm;
     __m256d tmp_ymm;
 
@@ -168,7 +172,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         A4_7_ymm = load<__m256d>(a + 12);
         
         // Shuffle b for second column calculation: [b1,b0,b3,b2]
-        b1_ymm = _mm256_shuffle_pd(b0_ymm, b0_ymm, 0x5);
+        b1_ymm = shuffle(b0_ymm, b0_ymm, 0x5);
         
         a0_3b_1_ymm = madd<__m256d>(a0_3_ymm, b1_ymm, a0_3b_1_ymm);
         a4_7b_1_ymm = madd<__m256d>(a4_7_ymm, b1_ymm, a4_7b_1_ymm);
@@ -183,7 +187,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         a4_7b_2_ymm = madd<__m256d>(a4_7_ymm, b2_ymm, a4_7b_2_ymm);
 
         // Shuffle b for fourth column calculation: (b2,b3,b0,b1)
-        b3_ymm = _mm256_shuffle_pd(b2_ymm, b2_ymm, 0x5);
+        b3_ymm = shuffle(b2_ymm, b2_ymm, 0x5);
         
         a0_3b_3_ymm = madd<__m256d>(a0_3_ymm, b3_ymm, a0_3b_3_ymm);
         a4_7b_3_ymm = madd<__m256d>(a4_7_ymm, b3_ymm, a4_7b_3_ymm);
@@ -197,10 +201,10 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         a0_3b_0_ymm = madd<__m256d>(A0_3_ymm, B0_ymm, a0_3b_0_ymm);
 
         // Shuffle B for next iteration
-        b1_ymm = _mm256_shuffle_pd(B0_ymm, B0_ymm, 0x5);
+        b1_ymm = shuffle(B0_ymm, B0_ymm, 0x5);
         
-        a4_7b_0_ymm = madd<__m256d>(A4_7_ymm, B0_ymm, a4_7b_0_ymm)
-        a0_3b_1_ymm = madd<__m256d>(A0_3_ymm, B0_ymm, a0_3b_1_ymm)
+        a4_7b_0_ymm = madd<__m256d>(A4_7_ymm, B0_ymm, a4_7b_0_ymm);
+        a0_3b_1_ymm = madd<__m256d>(A0_3_ymm, b1_ymm, a0_3b_1_ymm);
 
         // Load next iteration's A data
         a4_7_ymm = load<__m256d>(a + 20);
@@ -210,7 +214,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         a4_7b_1_ymm = madd<__m256d>(A4_7_ymm, b1_ymm, a4_7b_1_ymm);
         a0_3b_2_ymm = madd<__m256d>(A0_3_ymm, b2_ymm, a0_3b_2_ymm);
 
-        b3_ymm = _mm256_shuffle_pd(b2_ymm, b2_ymm, 0x5);
+        b3_ymm = shuffle(b2_ymm, b2_ymm, 0x5);
         
         a4_7b_2_ymm = madd<__m256d>(A4_7_ymm, b2_ymm, a4_7b_2_ymm);
 
@@ -238,7 +242,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         a4_7b_0_ymm = madd<__m256d>(a4_7_ymm, b0_ymm, a4_7b_0_ymm);
 
         // Shuffle b for second column: (b1,b0,b3,b2)
-        b1_ymm = _mm256_shuffle_pd(b0_ymm, b0_ymm, 0x5);
+        b1_ymm = shuffle(b0_ymm, b0_ymm, 0x5);
         // Second column calculations
         a0_3b_1_ymm = madd<__m256d>(a0_3_ymm, b1_ymm, a0_3b_1_ymm);
         a4_7b_1_ymm = madd<__m256d>(a4_7_ymm, b1_ymm, a4_7b_1_ymm);
@@ -250,7 +254,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         a4_7b_2_ymm = madd<__m256d>(a4_7_ymm, b2_ymm, a4_7b_2_ymm);
 
         // Shuffle b for fourth column: (b2,b3,b0,b1)
-        b3_ymm = _mm256_shuffle_pd(b2_ymm, b2_ymm, 0x5);
+        b3_ymm = shuffle(b2_ymm, b2_ymm, 0x5);
         
         // Fourth column calculations
         a0_3b_3_ymm = madd<__m256d>(a0_3_ymm, b3_ymm, a0_3b_3_ymm);
@@ -262,7 +266,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
     }
 
     // Reorganize results for proper storage
-    beta_ymm = broadcast<__m256d>(beta);
+    beta_ymm = broadcast(beta);
     
     // Blend operations for reorganizing results
     tmp_a0_3b_0_ymm = _mm256_blend_pd(a0_3b_0_ymm, a0_3b_1_ymm, 0x6);  // 0110
@@ -277,7 +281,7 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
     tmp_a4_7b_2_ymm = _mm256_blend_pd(a4_7b_2_ymm, a4_7b_3_ymm, 0x6);  // 0110
     tmp_a4_7b_3_ymm = _mm256_blend_pd(a4_7b_3_ymm, a4_7b_2_ymm, 0x6);  // 0110
     
-    alpha_ymm = broadcast<__m256d>(alpha);
+    alpha_ymm = broadcast(alpha);
     
     // Permute operations to finalize the reorganization
     a0_3b0_ymm = _mm256_permute2f128_pd(tmp_a0_3b_0_ymm, tmp_a0_3b_2_ymm, 0x30);  // 00|11|0000 = 0x30
@@ -296,61 +300,54 @@ void AddDot_8x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
     // First column
     c0_3_0 = c;
     c0_3_0_ymm = load<__m256d>(c0_3_0);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a0_3b0_ymm);
-    c0_3_0_ymm = mul<__m256d>(beta_ymm, c0_3_0_ymm);
-    c0_3_0_ymm = add<__m256d>(c0_3_0_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a0_3b0_ymm);
+    c0_3_0_ymm = madd(beta_ymm, c0_3_0_ymm, tmp_ymm);
     store(c0_3_0, c0_3_0_ymm);
     
     c4_7_0 = c + 4;
     c4_7_0_ymm = load<__m256d>(c4_7_0);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a4_7b0_ymm);
-    c4_7_0_ymm = mul<__m256d>(beta_ymm, c4_7_0_ymm);
-    c4_7_0_ymm = add<__m256d>(c4_7_0_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a4_7b0_ymm);
+    c4_7_0_ymm = madd(beta_ymm, c4_7_0_ymm, tmp_ymm);
     store(c4_7_0, c4_7_0_ymm);
     
+
     // Second column
     c0_3_1 = c + ldc;
     c0_3_1_ymm = load<__m256d>(c0_3_1);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a0_3b1_ymm);
-    c0_3_1_ymm = mul<__m256d>(beta_ymm, c0_3_1_ymm);
-    c0_3_1_ymm = add<__m256d>(c0_3_1_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a0_3b1_ymm);
+    c0_3_1_ymm = madd(beta_ymm, c0_3_1_ymm, tmp_ymm);
     store(c0_3_1, c0_3_1_ymm);
     
     c4_7_1 = c + ldc + 4;
     c4_7_1_ymm = load<__m256d>(c4_7_1);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a4_7b1_ymm);
-    c4_7_1_ymm = mul<__m256d>(beta_ymm, c4_7_1_ymm);
-    c4_7_1_ymm = add<__m256d>(c4_7_1_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a4_7b1_ymm);
+    c4_7_1_ymm = madd(beta_ymm, c4_7_1_ymm, tmp_ymm);
     store(c4_7_1, c4_7_1_ymm);
     
     // Third column
     c0_3_2 = c + 2 * ldc;
     c0_3_2_ymm = load<__m256d>(c0_3_2);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a0_3b2_ymm);
-    c0_3_2_ymm = mul<__m256d>(beta_ymm, c0_3_2_ymm);
-    c0_3_2_ymm = add<__m256d>(c0_3_2_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a0_3b2_ymm);
+    c0_3_2_ymm = madd(beta_ymm, c0_3_2_ymm, tmp_ymm);
     store(c0_3_2, c0_3_2_ymm);
     
     c4_7_2 = c + 2 * ldc + 4;
     c4_7_2_ymm = load<__m256d>(c4_7_2);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a4_7b2_ymm);
-    c4_7_2_ymm = mul<__m256d>(beta_ymm, c4_7_2_ymm);
-    c4_7_2_ymm = add<__m256d>(c4_7_2_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a4_7b2_ymm);
+    c4_7_2_ymm = madd(beta_ymm, c4_7_2_ymm, tmp_ymm);
     store(c4_7_2, c4_7_2_ymm);
     
     // Fourth column
     c0_3_3 = c + 3 * ldc;
     c0_3_3_ymm = load<__m256d>(c0_3_3);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a0_3b3_ymm);
-    c0_3_3_ymm = mul<__m256d>(beta_ymm, c0_3_3_ymm);
-    c0_3_3_ymm = add<__m256d>(c0_3_3_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a0_3b3_ymm);
+    c0_3_3_ymm = madd(beta_ymm, c0_3_3_ymm, tmp_ymm);
     store(c0_3_3, c0_3_3_ymm);
     
     c4_7_3 = c + 3 * ldc + 4;
     c4_7_3_ymm = load<__m256d>(c4_7_3);
-    tmp_ymm = mul<__m256d>(alpha_ymm, a4_7b3_ymm);
-    c4_7_3_ymm = mul<__m256d>(beta_ymm, c4_7_3_ymm);
-    c4_7_3_ymm = add<__m256d>(c4_7_3_ymm, tmp_ymm);
+    tmp_ymm = mul(alpha_ymm, a4_7b3_ymm);
+    c4_7_3_ymm = madd(beta_ymm, c4_7_3_ymm, tmp_ymm);
     store(c4_7_3, c4_7_3_ymm);
 }
 

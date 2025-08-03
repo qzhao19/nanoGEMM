@@ -12,9 +12,14 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
     float alpha = 1.0f, beta = 1.0f;
     float *c0_3_0, *c0_3_1, *c0_3_2, *c0_3_3;
     
-    // define matrix a0_3 and c0_3
+    // handle current data
     __m128 a0_3_xmm;
+    // prefetch next data
+    __m128 A0_3_xmm;
+    __m128 B0_3_xmm;
+    
     __m128 c0_3_0_xmm, c0_3_1_xmm, c0_3_2_xmm, c0_3_3_xmm;
+    __m128 tmp_xmm;
 
     // accumulator
     __m128 a0_3b_0_xmm = setzeros<__m128>();
@@ -22,60 +27,76 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
     __m128 a0_3b_2_xmm = setzeros<__m128>();
     __m128 a0_3b_3_xmm = setzeros<__m128>();
 
-    // pre-fetch a, b, and c data
+    // prefetch data
     __asm__ volatile("prefetcht0 0(%0)          \n\t" : :"r"(a));
     __asm__ volatile("prefetcht2 0(%0)          \n\t" : :"r"(b));
     __asm__ volatile("prefetcht0 0(%0)          \n\t" : :"r"(c));
 
-    // process blocks of 4 elements for better performance
-    int64_t k_blocks = k / 4;
-    int64_t k_remainder = k % 4;
+    // load initializ row of matrix A
+    a0_3_xmm = load<__m128>(a);
+    
+    // each iteration to process 2 batch data
+    int64_t k_blocks = k / 2;
+    int64_t k_remainder = k % 2;
     
     for (i = 0; i < k_blocks; ++i) {
-        // compute 1st k value
-        a0_3_xmm = load<__m128>(a);
-        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[0]), a0_3b_0_xmm);
-        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[1]), a0_3b_1_xmm);
-        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[2]), a0_3b_2_xmm);
-        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[3]), a0_3b_3_xmm);
+        // prefetch data that is far from the current location
+        __asm__ volatile("prefetcht0 64(%0)          \n\t" : :"r"(a));
 
-        // compute 2nd k value
-        a0_3_xmm = load<__m128>(a + 4);
-        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[4]), a0_3b_0_xmm);
-        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[5]), a0_3b_1_xmm);
-        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[6]), a0_3b_2_xmm);
-        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[7]), a0_3b_3_xmm);
+        // pre-load data A of next k value
+        A0_3_xmm = load<__m128>(a + 4);
 
-        if (i < k_blocks - 1) {
-            __asm__ volatile("prefetcht0 64(%0)          \n\t" : :"r"(a + 16));
-        }
+        // handle 1st iteration k = 1, col = 0, 1
+        tmp_xmm = set1<__m128>(b[0]);
+        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_0_xmm);
+        tmp_xmm = set1<__m128>(b[1]);
+        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_1_xmm);
 
-        // compute 3rd k value
+        // prefetch data B of k = 2
+        B0_3_xmm = load<__m128>(b + 4);
+
+        // handle 1st iteration k = 1, col = 2, 3
+        tmp_xmm = set1<__m128>(b[2]);
+        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_2_xmm);
+        tmp_xmm = set1<__m128>(b[3]);
+        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_3_xmm);
+
+        // prefetch data that is more far
+        __asm__ volatile("prefetcht0 128(%0)          \n\t" : :"r"(a));
+
+        // pre-load A for next iteration
         a0_3_xmm = load<__m128>(a + 8);
-        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[8]), a0_3b_0_xmm);
-        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[9]), a0_3b_1_xmm);
-        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[10]), a0_3b_2_xmm);
-        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[11]), a0_3b_3_xmm);
-        
-        // compute 4th k value
-        a0_3_xmm = load<__m128>(a + 12);
-        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[12]), a0_3b_0_xmm);
-        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[13]), a0_3b_1_xmm);
-        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[14]), a0_3b_2_xmm);
-        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[15]), a0_3b_3_xmm);
-        
-        // increment
-        a += 16;
-        b += 16;
-    }
 
-    // handle remaining elements
+        // handle 2ed iteration k = 2, col = 0, 1, 2, 4
+        tmp_xmm = set1<__m128>(B0_3_xmm[0]);
+        a0_3b_0_xmm = madd<__m128>(A0_3_xmm, tmp_xmm, a0_3b_0_xmm);
+        tmp_xmm = set1<__m128>(B0_3_xmm[1]);
+        a0_3b_1_xmm = madd<__m128>(A0_3_xmm, tmp_xmm, a0_3b_1_xmm);
+        tmp_xmm = set1<__m128>(B0_3_xmm[2]);
+        a0_3b_2_xmm = madd<__m128>(A0_3_xmm, tmp_xmm, a0_3b_2_xmm);
+        tmp_xmm = set1<__m128>(B0_3_xmm[3]);
+        a0_3b_3_xmm = madd<__m128>(A0_3_xmm, tmp_xmm, a0_3b_3_xmm);
+
+        // update pointer
+        a += 8;
+        b += 8;
+    }
+    
     for (i = 0; i < k_remainder; ++i) {
+        // compute the remaining k value
         a0_3_xmm = load<__m128>(a);
-        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[0]), a0_3b_0_xmm);
-        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[1]), a0_3b_1_xmm);
-        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[2]), a0_3b_2_xmm);
-        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, set1<__m128>(b[3]), a0_3b_3_xmm);
+
+        // col = 0, 1, 2, 4
+        tmp_xmm = set1<__m128>(b[0]);
+        a0_3b_0_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_0_xmm);
+        tmp_xmm = set1<__m128>(b[1]);
+        a0_3b_1_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_1_xmm);
+        tmp_xmm = set1<__m128>(b[2]);
+        a0_3b_2_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_2_xmm);
+        tmp_xmm = set1<__m128>(b[3]);
+        a0_3b_3_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_3_xmm);
+
+        // update pointer
         a += 4;
         b += 4;
     }
@@ -103,6 +124,7 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
     c0_3_3_xmm = load<__m128>(c0_3_3);
     c0_3_3_xmm = add(mul(beta_xmm, c0_3_3_xmm), mul(alpha_xmm, a0_3b_3_xmm));
     store(c0_3_3, c0_3_3_xmm);
+
 }
 
 

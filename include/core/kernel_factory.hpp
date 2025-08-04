@@ -7,9 +7,9 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
-#include <arch/gemm_kernels.hpp>
+#include <arch/tinyblas_kernels.hpp>
 
-namespace gemm {
+namespace tinyBLAS {
 namespace detail {
 
 // forward definition
@@ -62,7 +62,7 @@ private:
     std::string default_kernel_ = "4x4";
     
 public:
-    static KernelFactory& getInstance() {
+    static KernelFactory& get_instance() {
         static KernelFactory instance;
         return instance;
     }
@@ -70,22 +70,22 @@ public:
     // registery kernel
     template<int64_t RM, int64_t RN, 
              int64_t CM, int64_t CK, int64_t CN>
-    void registerKernel(const std::string& name, 
-                       MicroKernelType<TA, TB, TC, RM, RN> kernel) {
+    void register_kernel(const std::string& name, 
+                         MicroKernelType<TA, TB, TC, RM, RN> kernel) {
         creators_[name] = [kernel]() -> ExecutorPtr {
             return std::make_unique<GEMMExecutorImpl<TA, TB, TC, RM, RN, CM, CK, CN>>(kernel);
         };
     }
     
     // create kernel executor
-    ExecutorPtr createExecutor(const std::string& kernel_name) {
+    ExecutorPtr create_executor(const std::string& kernel_name) {
         auto it = creators_.find(kernel_name);
         if (it != creators_.end()) {
             return it->second();
         }
         
         if (kernel_name == "auto") {
-            return createAutoExecutor();
+            return create_auto_executor();
         }
         
         // use default kernel
@@ -98,12 +98,12 @@ public:
     }
     
     // check
-    bool hasKernel(const std::string& name) const {
+    bool has_kernel(const std::string& name) const {
         return creators_.find(name) != creators_.end();
     }
     
     // get all available kernel names
-    std::vector<std::string> getAvailableKernels() const {
+    std::vector<std::string> get_available_kernels() const {
         std::vector<std::string> kernels;
         for (const auto& pair : creators_) {
             kernels.push_back(pair.first);
@@ -114,18 +114,22 @@ public:
 private:
     KernelFactory() {
         // register the default kernel in the constructor
-        registerDefaultKernels();
+        register_default_kernels();
     }
     
-    void registerDefaultKernels();
+    void register_default_kernels();
     
-    ExecutorPtr createAutoExecutor() {
+    ExecutorPtr create_auto_executor() {
+        if (!has_kernel(default_kernel_)) {
+            throw std::runtime_error("No kernels available.");
+        }
+        
         // default use 4x4 kernel
         return creators_[default_kernel_]();
     }
 };
 
 } // namespace detail
-} // namespace gemm
+} // namespace tinyBLAS
 
 #endif // KERNEL_FACTORY_HPP_

@@ -5,7 +5,7 @@
 #include <limits>
 #include <cstdlib>
 #include <cmath>
-#include <gemm.hpp>
+#include <tinyblas.hpp>
 
 // A(i, j)     A[(j)*lda + (i)]
 // B(i, j)     B[(j)*ldb + (i)]
@@ -126,12 +126,11 @@ TYPED_TEST(GEMM8x4KernelTest, BasicMultiplyOddSize) {
     this->matmul_ref(M, N, K, this->A, lda, this->B, ldb, this->C_ref, ldc);
 
     // Use matmul API function instead of directly instantiating GEMM
-    gemm::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc, "8x4");
+    tinyBLAS::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc, "8x4");
     
     bool errorFound = this->compute_error(M, M, M, N, this->C, this->C_ref);
     ASSERT_FALSE(errorFound) << "Errors found in the result.";
 }
-
 
 TYPED_TEST(GEMM8x4KernelTest, BasicMultiplyEvenSize) {
     using T = TypeParam;
@@ -143,7 +142,7 @@ TYPED_TEST(GEMM8x4KernelTest, BasicMultiplyEvenSize) {
     this->matmul_ref(M, N, K, this->A, lda, this->B, ldb, this->C_ref, ldc);
 
     // Use matmul API function instead of directly instantiating GEMM
-    gemm::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc, "8x4");
+    tinyBLAS::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc, "8x4");
     
     bool errorFound = this->compute_error(M, M, M, N, this->C, this->C_ref);
     ASSERT_FALSE(errorFound) << "Errors found in the result.";

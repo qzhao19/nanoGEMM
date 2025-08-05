@@ -4,7 +4,7 @@
 #include <limits>
 #include <cstdlib>
 #include <cmath>
-#include <gemm.hpp>
+#include <tinyblas.hpp>
 
 // Reference matrix multiplication implementation for benchmarking
 template<typename T>
@@ -42,7 +42,7 @@ public:
 
     void run_benchmark() {
         // Run the actual GEMM operation
-        gemm::matmul(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_, "4x4");
+        tinyBALS::matmul(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_, "4x4");
     }
 
     // Add reference implementation method

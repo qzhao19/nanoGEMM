@@ -117,22 +117,32 @@ public:
     ~GEMM() = default;
     
     void multiply(int64_t m, int64_t n, int64_t k) {
+        // number of threads of inner dimension 
+        int64_t ic_nts;
         int64_t i, j, p;
         int64_t ic, jc, pc;
         int64_t ib, jb, pb;
+        char *str;
 
-        TA *packA; 
-        TB *packB;
-        packA = malloc_aligned<TA>(CK, CM + 1, sizeof(TA));
-        packB = malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
+        // check if the environment variable exists
+        ic_nts = 1;
+        str = std::getenv("IC_NTS");
+        if (str != nullptr) {
+            ic_nts = std::strtol(str, nullptr, 10);
+        }
 
+        TA *packA = malloc_aligned<TA>(CK, (CM + 1) * ic_nts, sizeof(TA)); 
+        TB *packB = malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
+        
+        // 5-th loop around micro-kernel
         for (jc = 0; jc < n; jc += CN) {
             jb = std::min(n - jc, CN);
-
+            // 4-th loop around micro-kernel
             for (pc = 0; pc < k; pc += CK) {
                 pb = std::min(k - pc, CK);
 
                 // packing sub-matrix B 
+                #pragma omp parallel for num_threads(ic_nts)
                 for (j = 0; j < jb; j += RN) {
                     pack_matrix_B(
                         pb,                      // number of rows to actually pack
@@ -144,32 +154,45 @@ public:
                     );
                 }
                 
-                for (ic = 0; ic < m; ic += CM) {
-                    ib = std::min(m - ic, CM);
-                    // packing sub-matrix A
-                    for (i = 0; i < ib; i+= RM) {
-                        pack_matrix_A(
-                            std::min(ib - i, RM),   // number of rows to actually pack
-                            pb,                     // umber of columns to actually pack
-                            ic + i,                 // global row offset
-                            pc,                     // global columns offset
-                            A_,                     // original matrix pointer
-                            &packA[i * pb]          // packed buffer position
-                        );
-                    }
+                // start a parallel region
+                #pragma omp parallel num_threads(ic_nts) private(ic, ib, i) 
+                {
+                    int64_t thread_id = omp_get_thread_num();
+                    
+                    // call partition_workload_by_thread
+                    int64_t range_start, range_end;
+                    partition_workload_by_thread(m, RM, range_start, range_end);
 
-                    for (j = 0; j < jb; j += RN) {
-                        for (i = 0; i < ib; i += RM) {
-                            micro_kernel_(
-                                pb,
-                                &packA[i * pb],
-                                &packB[j * pb],
-                                &C_[(jc + j) * ldc_ + (ic + i)],
-                                ldc_
+                    // 3-rd loop around micro-kernel
+                    for (ic = range_start; ic < range_end; ic += CM) {
+                        ib = std::min(range_end - ic, CM);
+                        // packing sub-matrix A
+                        for (i = 0; i < ib; i+= RM) {
+                            pack_matrix_A(
+                                std::min(ib - i, RM),                   // number of rows to actually pack
+                                pb,                                     // umber of columns to actually pack
+                                ic + i,                                 // global row offset
+                                pc,                                     // global columns offset
+                                A_,                                     // original matrix pointer
+                                &packA[thread_id * CM * pb + i * pb]    // packed buffer position
                             );
+                        }
+                        
+                        // 2-th loop around micro-kernel
+                        for (j = 0; j < jb; j += RN) {
+                            for (i = 0; i < ib; i += RM) {
+                                micro_kernel_(
+                                    pb,
+                                    &packA[thread_id * CM * pb + i * pb],
+                                    &packB[j * pb],
+                                    &C_[(jc + j) * ldc_ + (ic + i)],
+                                    ldc_
+                                );
+                            }
                         }
                     }
                 }
+                
             }
         }
         free(packA);

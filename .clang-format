@@ -1,0 +1,12 @@
+# .clang-format for nanoGEMM project
+BasedOnStyle: Google
+Standard: c++17
+ColumnLimit: 100
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+BinPackArguments: false
+BinPackParameters: false
+PointerAlignment: Right
+DerivePointerAlignment: false
+CommentPragmas: NOLINT.*

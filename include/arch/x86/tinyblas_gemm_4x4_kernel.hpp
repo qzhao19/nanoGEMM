@@ -7,17 +7,19 @@ namespace tinyBLAS {
 namespace detail {
 
 template <int64_t RM, int64_t RN>
-void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ldc) {
+void AddDot_4x4_kernel_float(
+    int64_t k, float *a, float *b, float *c, int64_t ldc, MicroKernelCtxType<float> *ctx) {
     int64_t i;
+    float *b_next = ctx->next;
     float alpha = 1.0f, beta = 1.0f;
     float *c0_3_0, *c0_3_1, *c0_3_2, *c0_3_3;
-    
+
     // handle current data
     __m128 a0_3_xmm;
     // prefetch next data
     __m128 A0_3_xmm;
     __m128 B0_3_xmm;
-    
+
     __m128 c0_3_0_xmm, c0_3_1_xmm, c0_3_2_xmm, c0_3_3_xmm;
     __m128 tmp_xmm;
 
@@ -28,20 +30,20 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
     __m128 a0_3b_3_xmm = setzeros<__m128>();
 
     // prefetch data
-    __asm__ volatile("prefetcht0 0(%0)          \n\t" : :"r"(a));
-    __asm__ volatile("prefetcht2 0(%0)          \n\t" : :"r"(b));
-    __asm__ volatile("prefetcht0 0(%0)          \n\t" : :"r"(c));
+    __asm__ volatile("prefetcht0 0(%0)          \n\t" : : "r"(a));
+    __asm__ volatile("prefetcht2 0(%0)          \n\t" : : "r"(b_next));
+    __asm__ volatile("prefetcht0 0(%0)          \n\t" : : "r"(c));
 
     // load initializ row of matrix A
     a0_3_xmm = load<__m128>(a);
-    
+
     // each iteration to process 2 batch data
     int64_t k_blocks = k / 2;
     int64_t k_remainder = k % 2;
-    
+
     for (i = 0; i < k_blocks; ++i) {
         // prefetch data that is far from the current location
-        __asm__ volatile("prefetcht0 64(%0)          \n\t" : :"r"(a));
+        __asm__ volatile("prefetcht0 64(%0)          \n\t" : : "r"(a));
 
         // pre-load data A of next k value
         A0_3_xmm = load<__m128>(a + 4);
@@ -62,7 +64,7 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
         a0_3b_3_xmm = madd<__m128>(a0_3_xmm, tmp_xmm, a0_3b_3_xmm);
 
         // prefetch data that is more far
-        __asm__ volatile("prefetcht0 128(%0)          \n\t" : :"r"(a));
+        __asm__ volatile("prefetcht0 128(%0)          \n\t" : : "r"(a));
 
         // pre-load A for next iteration
         a0_3_xmm = load<__m128>(a + 8);
@@ -81,7 +83,7 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
         a += 8;
         b += 8;
     }
-    
+
     for (i = 0; i < k_remainder; ++i) {
         // compute the remaining k value
         a0_3_xmm = load<__m128>(a);
@@ -126,16 +128,17 @@ void AddDot_4x4_kernel_float(int64_t k, float *a, float *b, float *c, int64_t ld
     store(c0_3_3, c0_3_3_xmm);
 };
 
-
 template <int64_t RM, int64_t RN>
-void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_t ldc) {
+void AddDot_4x4_kernel_double(
+    int64_t k, double *a, double *b, double *c, int64_t ldc, MicroKernelCtxType<double> *ctx) {
     int64_t i;
+    double *b_next = ctx->next;
     double alpha = 1.0, beta = 1.0;
     double *c0_3_0, *c0_3_1, *c0_3_2, *c0_3_3;
 
-    // define matrix a0_3 
+    // define matrix a0_3
     __m256d a0_3_ymm;
-    
+
     // prefetch next data
     __m256d A0_3_ymm;
     __m256d B0_3_ymm;
@@ -150,9 +153,9 @@ void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
     __m256d a0_3b_3_ymm = setzeros<__m256d>();
 
     // pre-fetch a, b, and c data
-    __asm__ volatile("prefetcht0 0(%0)          \n\t" : :"r"(a));
-	__asm__ volatile("prefetcht2 0(%0)          \n\t" : :"r"(b));
-	__asm__ volatile("prefetcht0 0(%0)          \n\t" : :"r"(c));
+    __asm__ volatile("prefetcht0 0(%0)          \n\t" : : "r"(a));
+    __asm__ volatile("prefetcht2 0(%0)          \n\t" : : "r"(b_next));
+    __asm__ volatile("prefetcht0 0(%0)          \n\t" : : "r"(c));
 
     // load initializ row of matrix A
     a0_3_ymm = load<__m256d>(a);
@@ -162,7 +165,7 @@ void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
 
     for (i = 0; i < k_blocks; ++i) {
         // prefetch data that is far from the current location
-        __asm__ volatile("prefetcht0 128(%0)          \n\t" : :"r"(a));
+        __asm__ volatile("prefetcht0 128(%0)          \n\t" : : "r"(a));
 
         // pre-load data A of next k value
         A0_3_ymm = load<__m256d>(a + 4);
@@ -175,7 +178,7 @@ void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
 
         // pre-load data B of k = 2
         B0_3_ymm = load<__m256d>(b + 4);
-        
+
         // handle 1st iteration k = 1, col = 2, 3
         tmp_ymm = set1<__m256d>(b[2]);
         a0_3b_2_ymm = madd<__m256d>(a0_3_ymm, tmp_ymm, a0_3b_2_ymm);
@@ -183,7 +186,7 @@ void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
         a0_3b_3_ymm = madd<__m256d>(a0_3_ymm, tmp_ymm, a0_3b_3_ymm);
 
         // prefetch data that is more far
-        __asm__ volatile("prefetcht0 256(%0)          \n\t" : :"r"(a));
+        __asm__ volatile("prefetcht0 256(%0)          \n\t" : : "r"(a));
 
         // pre-load A for next iteration
         a0_3_ymm = load<__m256d>(a + 8);
@@ -204,7 +207,7 @@ void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
 
     for (i = 0; i < k_remainder; ++i) {
         a0_3_ymm = load<__m256d>(a);
-        
+
         // col = 0, 1, 2, 4
         tmp_ymm = set1<__m256d>(b[0]);
         a0_3b_0_ymm = madd<__m256d>(a0_3_ymm, tmp_ymm, a0_3b_0_ymm);
@@ -247,22 +250,18 @@ void AddDot_4x4_kernel_double(int64_t k, double *a, double *b, double *c, int64_
     store(c0_3_3, c0_3_3_ymm);
 };
 
-
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
-void AddDot_4x4_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc) {
-    if constexpr (std::is_same_v<TA, float> && 
-                  std::is_same_v<TB, float> && 
+void AddDot_4x4_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc, MicroKernelCtxType<TB> *ctx) {
+    if constexpr (std::is_same_v<TA, float> && std::is_same_v<TB, float> &&
                   std::is_same_v<TC, float>) {
-        AddDot_4x4_kernel_float<RM, RN>(k, a, b, c, ldc);
-    }
-    else if constexpr (std::is_same_v<TA, double> && 
-                       std::is_same_v<TB, double> && 
-                       std::is_same_v<TC, double>) {
-        AddDot_4x4_kernel_double<RM, RN>(k, a, b, c, ldc);
+        AddDot_4x4_kernel_float<RM, RN>(k, a, b, c, ldc, ctx);
+    } else if constexpr (std::is_same_v<TA, double> && std::is_same_v<TB, double> &&
+                         std::is_same_v<TC, double>) {
+        AddDot_4x4_kernel_double<RM, RN>(k, a, b, c, ldc, ctx);
     }
 };
 
-} // namespace detail
-} // namespace tinyBLAS
+}  // namespace detail
+}  // namespace tinyBLAS
 
-#endif // X86_GEMM_4X4_KERNEL_HPP_
+#endif  // X86_GEMM_4X4_KERNEL_HPP_

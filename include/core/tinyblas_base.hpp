@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <core/tinyblas_common.hpp>
 
 namespace tinyBLAS {
 namespace detail {

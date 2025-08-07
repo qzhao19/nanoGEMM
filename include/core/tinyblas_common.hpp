@@ -3,7 +3,9 @@
 
 #include <cstdint>
 
+#define MEMORY_ALIGNMENT 32
 #define QK8_0 32
+#define QK4_0 32
 
 namespace tinyBLAS {
 

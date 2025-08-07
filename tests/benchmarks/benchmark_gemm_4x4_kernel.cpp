@@ -48,7 +48,7 @@ class GEMM4x4Benchmark {
 
     void run_benchmark() {
         // Run the actual GEMM operation
-        tinyBALS::matmul(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_, "4x4");
+        tinyBLAS::matmul(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_, "4x4");
     }
 
     // Add reference implementation method

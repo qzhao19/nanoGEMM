@@ -21,7 +21,7 @@ template <typename TA,
           int64_t CK,
           int64_t CN>
 class GEMM {
-   private:
+private:
     const TA *const A_;
     const TB *const B_;
     TC *const C_;
@@ -100,7 +100,7 @@ class GEMM {
         }
     };
 
-   public:
+public:
     GEMM(const TA *A,
          int64_t lda,
          const TB *B,

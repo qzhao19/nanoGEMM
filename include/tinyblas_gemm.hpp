@@ -126,8 +126,8 @@ public:
             ic_nts = std::strtol(str, nullptr, 10);
         }
 
-        TA *packA = malloc_aligned<TA>(CK, (CM + 1) * ic_nts, sizeof(TA));
-        TB *packB = malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
+        TA *packed_A = malloc_aligned<TA>(CK, (CM + 1) * ic_nts, sizeof(TA));
+        TB *packed_B = malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
 
         // 5-th loop around micro-kernel
         for (jc = 0; jc < n; jc += CN) {
@@ -144,7 +144,7 @@ public:
                                   pc,                    // global row offset
                                   jc + j,                // global columns offset
                                   B_,                    // original matrix pointer
-                                  &packB[j * pb]         // packed buffer
+                                  &packed_B[j * pb]         // packed buffer
                     );
                 }
 
@@ -167,13 +167,13 @@ public:
                                 ic + i,                // global row offset
                                 pc,                    // global columns offset
                                 A_,                    // original matrix pointer
-                                &packA[thread_id * CM * pb + i * pb]  // packed buffer position
+                                &packed_A[thread_id * CM * pb + i * pb]  // packed buffer position
                             );
                         }
 
                         // define micro-kernel ctx
                         MicroKernelCtxType<TB> ctx;
-                        ctx.next = packB;
+                        ctx.next = packed_B;
 
                         // 2-th loop around micro-kernel
                         for (j = 0; j < jb; j += RN) {
@@ -183,20 +183,22 @@ public:
                                 if (i + RM > ib) {
                                     ctx.next += pb * RN;
                                 }
-                                micro_kernel_(pb,
-                                              &packA[thread_id * CM * pb + i * pb],
-                                              &packB[j * pb],
-                                              &C_[(jc + j) * ldc_ + (ic + i)],
-                                              ldc_, 
-                                              &ctx);
+                                micro_kernel_(
+                                    pb,
+                                    &packed_A[thread_id * CM * pb + i * pb],
+                                    &packed_B[j * pb],
+                                    &C_[(jc + j) * ldc_ + (ic + i)],
+                                    ldc_, 
+                                    &ctx
+                                );
                             }
                         }
                     }
                 }
             }
         }
-        free(packA);
-        free(packB);
+        free(packed_A);
+        free(packed_B);
     };
 };
 

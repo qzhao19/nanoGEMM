@@ -224,6 +224,10 @@ template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
 using MicroKernelType =
     std::function<void(int64_t, TA *, TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
 
+template <typename TA, typename TX, typename TY, int64_t RM, int64_t RN>
+using GEMVMicroKernelType = 
+    std::function<void(int64_t, TA *, TX *, TY *)>;
+
 }  // namespace detail
 }  // namespace tinyBLAS
 

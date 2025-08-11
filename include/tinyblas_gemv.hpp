@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <arch/tinyblas_kernels.hpp>
+#include <arch/x86/tinyblas_gemv_32x4_kernel.hpp>
 #include <core/kernel_factory.hpp>
 #include <core/tinyblas_base.hpp>
 #include <string>
@@ -25,7 +26,7 @@ private:
 
     const int64_t lda_;
     
-    MicroKernelType<TA, TX, TY, RM, RN> micro_kernel_;
+    GEMVMicroKernelType<TA, TX, TY, RM, RN> micro_kernel_;
 
     void pack_matrix_A(
         int64_t m, int64_t n, int64_t row_offset, int64_t col_offset, const TA *A, TA *packed_A) {
@@ -75,7 +76,9 @@ public:
          int64_t lda,
          const TX *x,
          TY *y)
-        : A_(A), lda_(lda), x_(x), y_(y){};
+        : A_(A), lda_(lda), x_(x), y_(y){
+            micro_kernel_ = AddDot_32x4_kernel_float<RM, RN>;
+        };
     ~GEMV() = default;
     
     void multiply(int64_t m, int64_t n) {
@@ -109,7 +112,12 @@ public:
                 // call micro-kernel function
                 for (j = 0; j < jb; j += RN) {
                     for (i = 0; i < ib; i += RM) {
-                        micro_kernel_();
+                        micro_kernel_(
+                            jb,                 // number of columns A, vector size
+                            &packed_A[i * jb],  // packed matrix A
+                            &packed_x[0],       // packed vector x
+                            &y_[ic + i],        // result y
+                        );
                     }
                 }
             }

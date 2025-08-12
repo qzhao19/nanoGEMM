@@ -19,23 +19,26 @@ void AddDot_32x4_kernel_float(int64_t k, float *a, float *x, float *y) {
 
     // accumulator
     __m256 a0_7x_0_ymm = setzeros<__m256>();
-    __m256 a8_15x_1_ymm = setzeros<__m256>();
-    __m256 a16_23x_2_ymm = setzeros<__m256>();
-    __m256 a24_31x_3_ymm = setzeros<__m256>();
-
     __m256 a0_7x_1_ymm = setzeros<__m256>();
-    __m256 a8_15x_1_ymm = setzeros<__m256>();
-    __m256 a16_23x_1_ymm = setzeros<__m256>();
-    __m256 a24_31x_1_ymm = setzeros<__m256>();
-    
     __m256 a0_7x_2_ymm = setzeros<__m256>();
-    __m256 a8_15x_2_ymm = setzeros<__m256>();
-    __m256 a16_23x_2_ymm = setzeros<__m256>();
-    __m256 a24_31x_2_ymm = setzeros<__m256>();
-    
     __m256 a0_7x_3_ymm = setzeros<__m256>();
+    
+    // Second row
+    __m256 a8_15x_0_ymm = setzeros<__m256>();
+    __m256 a8_15x_1_ymm = setzeros<__m256>();
+    __m256 a8_15x_2_ymm = setzeros<__m256>();
     __m256 a8_15x_3_ymm = setzeros<__m256>();
+    
+    // Third row
+    __m256 a16_23x_0_ymm = setzeros<__m256>();
+    __m256 a16_23x_1_ymm = setzeros<__m256>();
+    __m256 a16_23x_2_ymm = setzeros<__m256>();
     __m256 a16_23x_3_ymm = setzeros<__m256>();
+    
+    // Fourth row
+    __m256 a24_31x_0_ymm = setzeros<__m256>();
+    __m256 a24_31x_1_ymm = setzeros<__m256>();
+    __m256 a24_31x_2_ymm = setzeros<__m256>();
     __m256 a24_31x_3_ymm = setzeros<__m256>();
 
     // prefetch initial data
@@ -163,19 +166,19 @@ void AddDot_32x4_kernel_float(int64_t k, float *a, float *x, float *y) {
     
     tmp_ymm = load<__m256>(y0_7);
     tmp_ymm = add(tmp_ymm, a0_7x_0_ymm);
-    store<__m256>(y0_7, tmp_ymm);
+    store(y0_7, tmp_ymm);
     
     tmp_ymm = load<__m256>(y8_15);
     tmp_ymm = add(tmp_ymm, a8_15x_0_ymm);
-    store<__m256>(y8_15, tmp_ymm);
+    store(y8_15, tmp_ymm);
     
     tmp_ymm = load<__m256>(y16_23);
     tmp_ymm = add(tmp_ymm, a16_23x_0_ymm);
-    store<__m256>(y16_23, tmp_ymm);
+    store(y16_23, tmp_ymm);
     
     tmp_ymm = load<__m256>(y24_31);
     tmp_ymm = add(tmp_ymm, a24_31x_0_ymm);
-    store<__m256>(y24_31, tmp_ymm);
+    store(y24_31, tmp_ymm);
     
     y0_7 = y + 1;
     y8_15 = y + 1 + 8;
@@ -184,19 +187,19 @@ void AddDot_32x4_kernel_float(int64_t k, float *a, float *x, float *y) {
     
     tmp_ymm = load<__m256>(y0_7);
     tmp_ymm = add(tmp_ymm, a0_7x_1_ymm);
-    store<__m256>(y0_7, tmp_ymm);
+    store(y0_7, tmp_ymm);
     
     tmp_ymm = load<__m256>(y8_15);
     tmp_ymm = add(tmp_ymm, a8_15x_1_ymm);
-    store<__m256>(y8_15, tmp_ymm);
+    store(y8_15, tmp_ymm);
     
     tmp_ymm = load<__m256>(y16_23);
     tmp_ymm = add(tmp_ymm, a16_23x_1_ymm);
-    store<__m256>(y16_23, tmp_ymm);
+    store(y16_23, tmp_ymm);
     
     tmp_ymm = load<__m256>(y24_31);
     tmp_ymm = add(tmp_ymm, a24_31x_1_ymm);
-    store<__m256>(y24_31, tmp_ymm);
+    store(y24_31, tmp_ymm);
     
     y0_7 = y + 2;
     y8_15 = y + 2 + 8;
@@ -205,19 +208,19 @@ void AddDot_32x4_kernel_float(int64_t k, float *a, float *x, float *y) {
     
     tmp_ymm = load<__m256>(y0_7);
     tmp_ymm = add(tmp_ymm, a0_7x_2_ymm);
-    store<__m256>(y0_7, tmp_ymm);
+    store(y0_7, tmp_ymm);
     
     tmp_ymm = load<__m256>(y8_15);
     tmp_ymm = add(tmp_ymm, a8_15x_2_ymm);
-    store<__m256>(y8_15, tmp_ymm);
+    store(y8_15, tmp_ymm);
     
     tmp_ymm = load<__m256>(y16_23);
     tmp_ymm = add(tmp_ymm, a16_23x_2_ymm);
-    store<__m256>(y16_23, tmp_ymm);
+    store(y16_23, tmp_ymm);
     
     tmp_ymm = load<__m256>(y24_31);
     tmp_ymm = add(tmp_ymm, a24_31x_2_ymm);
-    store<__m256>(y24_31, tmp_ymm);
+    store(y24_31, tmp_ymm);
     
     y0_7 = y + 3;
     y8_15 = y + 3 + 8;
@@ -226,31 +229,32 @@ void AddDot_32x4_kernel_float(int64_t k, float *a, float *x, float *y) {
     
     tmp_ymm = load<__m256>(y0_7);
     tmp_ymm = add(tmp_ymm, a0_7x_3_ymm);
-    store<__m256>(y0_7, tmp_ymm);
+    store(y0_7, tmp_ymm);
     
     tmp_ymm = load<__m256>(y8_15);
     tmp_ymm = add(tmp_ymm, a8_15x_3_ymm);
-    store<__m256>(y8_15, tmp_ymm);
+    store(y8_15, tmp_ymm);
     
     tmp_ymm = load<__m256>(y16_23);
     tmp_ymm = add(tmp_ymm, a16_23x_3_ymm);
-    store<__m256>(y16_23, tmp_ymm);
+    store(y16_23, tmp_ymm);
     
     tmp_ymm = load<__m256>(y24_31);
     tmp_ymm = add(tmp_ymm, a24_31x_3_ymm);
-    store<__m256>(y24_31, tmp_ymm);
+    store(y24_31, tmp_ymm);
 };
 
-// template <typename TA, typename TX, typename TY, int64_t RM, int64_t RN>
-// void AddDot_4x4_kernel(int64_t k, TA *a, TX *x, TY *c) {
-//     if constexpr (std::is_same_v<TA, float> && std::is_same_v<TB, float> &&
-//                   std::is_same_v<TC, float>) {
-//         AddDot_4x4_kernel_float<RM, RN>(k, a, b, c, ctx);
-//     } else if constexpr (std::is_same_v<TA, double> && std::is_same_v<TB, double> &&
-//                          std::is_same_v<TC, double>) {
-//         AddDot_4x4_kernel_double<RM, RN>(k, a, b, c, ctx);
-//     }
-// };
+template <typename TA, typename TX, typename TY, int64_t RM, int64_t RN>
+void AddDot_32x4_kernel(int64_t k, TA *a, TX *x, TY *y) {
+    if constexpr (std::is_same_v<TA, float> && std::is_same_v<TX, float> &&
+                  std::is_same_v<TY, float>) {
+        AddDot_32x4_kernel_float<RM, RN>(k, a, x, y);
+    } 
+    // else if constexpr (std::is_same_v<TA, double> && std::is_same_v<TB, double> &&
+    //                      std::is_same_v<TC, double>) {
+    //     AddDot_4x4_kernel_double<RM, RN>(k, a, b, c, ctx);
+    // }
+};
 
 } // detail
 } // tinyBLAS

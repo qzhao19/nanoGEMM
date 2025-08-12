@@ -75,10 +75,9 @@ public:
     GEMV(const TA *A,
          int64_t lda,
          const TX *x,
-         TY *y)
-        : A_(A), lda_(lda), x_(x), y_(y){
-            micro_kernel_ = AddDot_32x4_kernel_float<RM, RN>;
-        };
+         TY *y, 
+         GEMVMicroKernelType<TA, TX, TY, RM, RN> micro_kernel)
+        : A_(A), lda_(lda), x_(x), y_(y), micro_kernel_(micro_kernel){};
     ~GEMV() = default;
     
     void multiply(int64_t m, int64_t n) {
@@ -116,7 +115,7 @@ public:
                             jb,                 // number of columns A, vector size
                             &packed_A[i * jb],  // packed matrix A
                             &packed_x[0],       // packed vector x
-                            &y_[ic + i],        // result y
+                            &y_[ic + i]         // result y
                         );
                     }
                 }
@@ -124,11 +123,20 @@ public:
 
         }
     }
-
-
 };
 
 }  // namespace detail
+
+void matmul(int64_t m, int64_t n,
+            const float* A, int64_t lda,
+            const float* x,
+            float* y);
+
+void matmul(int64_t m, int64_t n,
+            const double* A, int64_t lda,
+            const double* x,
+            double* y);
+
 }  // namespace tinyBLAS
 
 #endif  // TINYBLAS_GEMM_HPP_

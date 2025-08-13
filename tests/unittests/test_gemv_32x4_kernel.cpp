@@ -88,7 +88,7 @@ TYPED_TEST_SUITE(GEMV32x4KernelTest, TestTypes);
 
 TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyOddSize) {
     using T = TypeParam;
-    int64_t M = 251, N = 173;
+    int64_t M = 3251, N = 1173;
     int64_t lda = M;
     this->generate_test_data(M, N, lda);
 
@@ -96,7 +96,7 @@ TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyOddSize) {
     this->matmul_ref(M, N, this->A, lda, this->x, this->y_ref);
 
     // Use matmul API function instead of directly instantiating GEMM
-    tinyBLAS::matmul(M, N, this->A, lda, this->x, this->y_ref);
+    tinyBLAS::matmul(M, N, this->A, lda, this->x, this->y);
 
     bool errorFound = this->compute_error(M, this->y, this->y_ref);
     ASSERT_FALSE(errorFound) << "Errors found in the result.";
@@ -104,7 +104,7 @@ TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyOddSize) {
 
 TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyEvenSize) {
     using T = TypeParam;
-    int64_t M = 256, N = 128;
+    int64_t M = 512, N = 256;
     int64_t lda = M;
     this->generate_test_data(M, N, lda);
 

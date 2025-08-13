@@ -23,7 +23,6 @@ private:
     const TA *const A_;
     const TX *const x_;
     TY *const y_;
-
     const int64_t lda_;
     
     GEMVMicroKernelType<TA, TX, TY, RM, RN> micro_kernel_;
@@ -63,11 +62,12 @@ private:
         int64_t n, int64_t col_offset, const TX *x, TX *packed_x) {
         
         int64_t j;
-        for (j = 0; j < std::min(n, RN); ++j) {
-            packed_x[j] = x[col_offset + j];
-        }
-        for (; j < RN; ++j) {
-            packed_x[j] = 0;
+        for (j = 0; j < n; ++j) {
+            if (j < CN) {
+                packed_x[j] = x[col_offset + j];
+            } else {
+                packed_x[j] = static_cast<TX>(0);
+            } 
         }
     }
 
@@ -85,18 +85,21 @@ public:
         int64_t ic, jc;
         int64_t ib, jb;
         
-        TA *packed_A = malloc_aligned<TA>(CN, CM + 1, sizeof(TA));
+        TA *packed_A = malloc_aligned<TA>(CN, RM, sizeof(TA));
         TX *packed_x = malloc_aligned<TX>(CN, 1, sizeof(TX));
 
+        // perform block on columns axis
         for (jc = 0; jc < n; jc += CN) {
             jb = std::min(n - jc, CN);
             
-            for (j = 0; j < jb; j += RN) {
-                pack_vector_x(std::min(RN, jb - j), jc + j, x_, packed_x);
-            }
+            // pack jb elements, starting from the offset jc
+            pack_vector_x(jb, jc, x_, packed_x);
 
+            // perform block on row
             for (ic = 0; ic < m; ic += CM) {
+                // current row block size
                 ib = std::min(m - ic, CM);
+                
                 for (i = 0; i < ib; i += RM) {
                     pack_matrix_A(
                         std::min(ib - i, RM),
@@ -104,23 +107,18 @@ public:
                         ic + i,
                         jc,
                         A_,
-                        &packed_A[i * jb]
+                        packed_A
+                    );
+
+                    // call micro-kernel function
+                    micro_kernel_(
+                        jb,
+                        packed_A,
+                        packed_x,
+                        &y_[ic + i]
                     );
                 }
-
-                // call micro-kernel function
-                for (j = 0; j < jb; j += RN) {
-                    for (i = 0; i < ib; i += RM) {
-                        micro_kernel_(
-                            jb,                 // number of columns A, vector size
-                            &packed_A[i * jb],  // packed matrix A
-                            &packed_x[0],       // packed vector x
-                            &y_[ic + i]         // result y
-                        );
-                    }
-                }
             }
-
         }
     }
 };

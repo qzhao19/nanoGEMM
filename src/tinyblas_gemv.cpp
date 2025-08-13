@@ -2,13 +2,13 @@
 
 namespace tinyBLAS {
 
-inline void matmul(int64_t m, int64_t n,
-                 const float* A, int64_t lda,
-                 const float* x,
-                 float* y) {
+void matmul(int64_t m, int64_t n,
+            const float* A, int64_t lda,
+            const float* x,
+            float* y) {
 
-    detail::GEMVMicroKernelType<float, float, float, 32, 4> AddDot_32x4_kernel;
-    tinyBLAS::detail::GEMV<float, float, float, 32, 4, 72, 256> gemv_engine(A, lda, x, y, AddDot_32x4_kernel);
+    tinyBLAS::detail::GEMV<float, float, float, 32, 4, 72, 256> gemv_engine(
+        A, lda, x, y, &tinyBLAS::detail::AddDot_32x4_kernel_float<32, 4>);
     gemv_engine.multiply(m, n);
 };
 

@@ -55,7 +55,7 @@ private:
                     a_val[i] = *a_ptr[i];
                     a_ptr[i] += lda_;
                 } else {
-                    a_val[i] = 0;
+                    a_val[i] = static_cast<TA>(0);
                 }
             }
 
@@ -89,7 +89,7 @@ private:
                     b_ptr[j]++;
                 } else {
                     // add proper zero padding
-                    b_val[j] = 0;
+                    b_val[j] = static_cast<TB>(0);
                     // do not increment pointer for padding
                 }
             }

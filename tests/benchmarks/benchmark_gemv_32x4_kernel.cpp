@@ -9,12 +9,12 @@
 // Reference GEMV implementation for benchmarking
 template <typename T>
 void gemv_ref(int64_t m, int64_t n, const T* A, int64_t lda, const T* x, T* y) {
-    for (int64_t i = 0; i < m; ++i) {
-        T sum = static_cast<T>(0);
-        for (int64_t j = 0; j < n; ++j) {
-            sum += A[j * lda + i] * x[j];
+    for (int64_t j = 0; j < n; ++j) {
+        float xj = x[j];
+        const float* a_col = A + j * lda;
+        for (int64_t i = 0; i < m; ++i) {
+            y[i] += a_col[i] * xj;
         }
-        y[i] = sum;
     }
 }
 
@@ -111,18 +111,20 @@ static void BM_GEMV_Ref(benchmark::State& state) {
 
 // Define benchmark test cases for float (optimized)
 BENCHMARK_TEMPLATE(BM_GEMV, float)
+    ->Args({251, 173})
     ->Args({256, 256})
     ->Args({512, 512})
     ->Args({1024, 1024})
-    ->Args({251, 173})
-    ->Args({1000, 100})
+    ->Args({2048, 2048})
     ->Unit(benchmark::kMillisecond);
 
 // Define benchmark test cases for float (reference)
 BENCHMARK_TEMPLATE(BM_GEMV_Ref, float)
+    ->Args({251, 173})
     ->Args({256, 256})
     ->Args({512, 512})
-    ->Args({251, 173})
+    ->Args({1024, 1024})
+    ->Args({2048, 2048})
     ->Unit(benchmark::kMillisecond);
 
 // Define benchmark test cases for double (optimized)

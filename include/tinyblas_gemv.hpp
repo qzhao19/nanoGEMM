@@ -27,50 +27,6 @@ private:
     
     GEMVMicroKernelType<TA, TX, TY, RM, RN> micro_kernel_;
 
-    void pack_matrix_A(
-        int64_t m, int64_t n, int64_t row_offset, int64_t col_offset, const TA *A, TA *packed_A) {
-        
-        int64_t i, j;
-        const TA *a_ptr[RM];
-
-        for (i = 0; i < RM; ++i) {
-            if (i < m) {
-                a_ptr[i] = &A[(col_offset + 0) * lda_ + (row_offset + i)];
-            } else {
-                a_ptr[i] = &A[(col_offset + 0) * lda_ + (row_offset + 0)];
-            }
-        }
-
-        for (j = 0; j < n; ++j) {
-            TA a_val[RM];
-            for (i = 0; i < RM; ++i) {
-                if (i < m) {
-                    a_val[i] = *a_ptr[i];
-                    a_ptr[i] += lda_;
-                } else {
-                    a_val[i] = 0;
-                }
-            }
-            // then write to the pack buffer all at once
-            for (i = 0; i < RM; ++i) {
-                *packed_A++ = a_val[i];
-            }
-        }
-    }
-
-    void pack_vector_x(
-        int64_t n, int64_t col_offset, const TX *x, TX *packed_x) {
-        
-        int64_t j;
-        for (j = 0; j < n; ++j) {
-            if (j < CN) {
-                packed_x[j] = x[col_offset + j];
-            } else {
-                packed_x[j] = static_cast<TX>(0);
-            } 
-        }
-    }
-
 public:
     GEMV(const TA *A,
          int64_t lda,
@@ -81,47 +37,87 @@ public:
     ~GEMV() = default;
     
     void multiply(int64_t m, int64_t n) {
-        int64_t i, j;
-        int64_t ic, jc;
-        int64_t ib, jb;
+        int64_t ic, ib, jc, jb;
         
-        TA *packed_A = malloc_aligned<TA>(CN, RM, sizeof(TA));
-        TX *packed_x = malloc_aligned<TX>(CN, 1, sizeof(TX));
-
-        // perform block on columns axis
+        #pragma omp parallel for
         for (jc = 0; jc < n; jc += CN) {
-            jb = std::min(n - jc, CN);
-            
-            // pack jb elements, starting from the offset jc
-            pack_vector_x(jb, jc, x_, packed_x);
+            jb = std::min(jc + CN, n);
 
-            // perform block on row
             for (ic = 0; ic < m; ic += CM) {
-                // current row block size
-                ib = std::min(m - ic, CM);
-                
-                for (i = 0; i < ib; i += RM) {
-                    pack_matrix_A(
-                        std::min(ib - i, RM),
-                        jb,
-                        ic + i,
-                        jc,
-                        A_,
-                        packed_A
-                    );
+                ib = std::min(ic + CM, m);
 
-                    // call micro-kernel function
-                    micro_kernel_(
-                        jb,
-                        packed_A,
-                        packed_x,
-                        &y_[ic + i]
-                    );
+                for (int64_t i = ic; i < ib; i += RM) {
+                    const int64_t nrows = std::min(ib - i, RM);
+                    TY sum[RM] = {0.0f};
+                    
+                    __m256 y_j_ymm[RM];
+                    for (int64_t r = 0; r < nrows; ++r) {
+                        y_j_ymm[r] = setzeros<__m256>();
+                    }
+                    
+                    for (int64_t j = jc; j + 7 < jb; j += 8) {
+                        __m256 x_j_ymm = load<__m256>(&x_[j]);
+                        
+                        for (int64_t r = 0; r < nrows; ++r) {
+                            float temp_a[8];
+                            for (int64_t k = 0; k < 8; ++k) {
+                                temp_a[k] = A_[(j+k) * lda_ + (i+r)];
+                            }
+                            
+                            __m256 a_rj_ymm = load<__m256>(temp_a);
+                            y_j_ymm[r] = madd<__m256>(a_rj_ymm, x_j_ymm, y_j_ymm[r]);
+                        }
+                    }
+                    
+                    for (int64_t r = 0; r < nrows; ++r) {
+                        sum[r] += hsum(y_j_ymm[r]);
+                    }
+
+                    __m128 y_j_xmm[RM];
+                    for (int64_t r = 0; r < nrows; ++r) {
+                        y_j_xmm[r] = setzeros<__m128>();
+                    }
+                    
+                    int64_t j = jc;
+                    while (j + 7 < jb) j += 8;
+                    
+                    for (; j + 3 < jb; j += 4) {
+                        __m128 x_j_xmm = load<__m128>(&x_[j]);
+                        
+                        for (int64_t r = 0; r < nrows; ++r) {
+                            float temp_a[4];
+                            for (int64_t k = 0; k < 4; ++k) {
+                                temp_a[k] = A_[(j+k) * lda_ + (i+r)];
+                            }
+                            
+                            __m128 a_rj_xmm = load<__m128>(temp_a);
+                            y_j_xmm[r] = madd<__m128>(a_rj_xmm, x_j_xmm, y_j_xmm[r]);
+                        }
+                    }
+                    
+                    for (int64_t r = 0; r < nrows; ++r) {
+                        sum[r] += hsum(y_j_xmm[r]);
+                    }
+
+                    while (j + 7 < jb) j += 8;
+                    while (j + 3 < jb) j += 4;
+                    
+                    for (; j < jb; ++j) {
+                        for (int64_t r = 0; r < nrows; ++r) {
+                            sum[r] += A_[j * lda_ + (i + r)] * x_[j];
+                        }
+                    }
+                    
+                    for (int64_t r = 0; r < nrows; ++r) {
+                        y_[i + r] += sum[r];
+                    }
                 }
             }
         }
     }
 };
+
+
 
 }  // namespace detail
 

@@ -35,67 +35,57 @@ private:
     void pack_matrix_A(
         int64_t m, int64_t k, int64_t row_offset, int64_t col_offset, const TA *A, TA *packed_A) {
         int64_t i, p;
+        // initialize the pointer array to store start ptr of each row
         const TA *a_ptr[RM];
 
+        // points to position of the corresponding row in the col_offset column
         for (i = 0; i < RM; ++i) {
             if (i < m) {
-                a_ptr[i] = &A[(col_offset + 0) * lda_ + (row_offset + i)];
+                a_ptr[i] = &A[(row_offset + i) * lda_ + col_offset];
             } else {
-                a_ptr[i] = &A[(col_offset + 0) * lda_ + (row_offset + 0)];
+                a_ptr[i] = &A[(row_offset + 0) * lda_ + col_offset];
             }
         }
-
-        for (p = 0; p < k; ++p) {
-            // define a local var to store row elements
-            TA a_val[RM];
-            for (i = 0; i < RM; ++i) {
+        // pack in row-major order
+        for (i = 0; i < RM; ++i) {
+            const TA *row = a_ptr[i];
+            for (p = 0; p < k; ++p) {
                 if (i < m) {
-                    // cache each row elements
-                    // move ptr to next col
-                    a_val[i] = *a_ptr[i];
-                    a_ptr[i] += lda_;
+                    *packed_A++ = row[p];
                 } else {
-                    a_val[i] = static_cast<TA>(0);
+                    *packed_A++ = static_cast<TA>(0);
                 }
-            }
-
-            // then write to the pack buffer all at once
-            for (i = 0; i < RM; ++i) {
-                *packed_A++ = a_val[i];
             }
         }
     };
 
     void pack_matrix_B(
         int64_t k, int64_t n, int64_t row_offset, int64_t col_offset, const TB *B, TB *packed_B) {
-        int64_t j, p;
+        
+        int64_t p, j;
         const TB *b_ptr[RN];
-
+        
+        // set the correct starting pointer for each column
         for (j = 0; j < RN; ++j) {
             if (j < n) {
-                b_ptr[j] = &B[(col_offset + j) * ldb_ + row_offset];
+                // points to the position of the corresponding column in the first row
+                b_ptr[j] = &B[row_offset* ldb_ + (col_offset + j)];
             } else {
-                b_ptr[j] = &B[(col_offset + 0) * ldb_ + row_offset];
+                b_ptr[j] = &B[row_offset* ldb_ + (col_offset + 0)];
             }
         }
 
-        for (p = 0; p < k; p++) {
-            // read all values into a local array (in the cache)
-            TB b_val[RN];
-            for (j = 0; j < RN; j++) {
+        // pack in column-major order
+        for (j = 0; j < RN; ++j) {
+            const TB *col = b_ptr[j];
+            for (p = 0; p < k; ++p) {
                 if (j < n) {
-                    // only access valid elements
-                    b_val[j] = *b_ptr[j];
-                    b_ptr[j]++;
+                    *packed_B++ = *col;
+                    // move to the position in the same column of the next row
+                    col += ldb_;
                 } else {
-                    // add proper zero padding
-                    b_val[j] = static_cast<TB>(0);
-                    // do not increment pointer for padding
+                    *packed_B++ = static_cast<TB>(0);
                 }
-            }
-            // write to the pack buffer all at once
-            for (j = 0; j < RN; j++) {
-                *packed_B++ = b_val[j];
             }
         }
     };
@@ -130,68 +120,45 @@ public:
         TB *packed_B = malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
 
         // 5-th loop around micro-kernel
-        for (jc = 0; jc < n; jc += CN) {
-            jb = std::min(n - jc, CN);
+        for (ic = 0; ic < m; ic += CM) {
+            ib = std::min(m - ic, CM);
+
             // 4-th loop around micro-kernel
             for (pc = 0; pc < k; pc += CK) {
                 pb = std::min(k - pc, CK);
 
-                // packing sub-matrix B
-                #pragma omp parallel for num_threads(ic_nts)
-                for (j = 0; j < jb; j += RN) {
-                    pack_matrix_B(pb,                    // number of rows to actually pack
-                                  std::min(jb - j, RN),  // number of columns to actually pack
-                                  pc,                    // global row offset
-                                  jc + j,                // global columns offset
-                                  B_,                    // original matrix pointer
-                                  &packed_B[j * pb]         // packed buffer
+                // packing sub-matrix A
+                for (i = 0; i < ib; i += RM) {
+                    pack_matrix_A(
+                        std::min(ib - i, RM),
+                        pb,
+                        ic + i,
+                        pc,
+                        &A_,
+                        &packed_A[i * pb]
                     );
                 }
 
-                // start a parallel region
-                #pragma omp parallel num_threads(ic_nts) private(ic, ib, i)
-                {
-                    int64_t thread_id = omp_get_thread_num();
-                    // call partition_workload_by_thread
-                    int64_t range_start, range_end;
-                    partition_workload_by_thread(m, RM, range_start, range_end);
+                // 3-rd loop around micro-kernel
+                for (jc = 0; jc < n; jc += CN) {
+                    jb = std::min(n - jc, CN);
 
-                    // 3-rd loop around micro-kernel
-                    for (ic = range_start; ic < range_end; ic += CM) {
-                        ib = std::min(range_end - ic, CM);
-                        // packing sub-matrix A
-                        for (i = 0; i < ib; i += RM) {
-                            pack_matrix_A(
-                                std::min(ib - i, RM),  // number of rows to actually pack
-                                pb,                    // umber of columns to actually pack
-                                ic + i,                // global row offset
-                                pc,                    // global columns offset
-                                A_,                    // original matrix pointer
-                                &packed_A[thread_id * CM * pb + i * pb]  // packed buffer position
-                            );
-                        }
+                    // packing sub-matrix B
+                    for (j = 0; j < jb; j += RN) {
+                        pack_matrix_B(
+                            pb,
+                            std::min(jb - j, RN),
+                            pc,
+                            jc + j,
+                            &B_,
+                            &packed_B[j * pb]
+                        );
+                    }
 
-                        // define micro-kernel ctx
-                        MicroKernelCtxType<TB> ctx;
-                        ctx.next = packed_B;
-
-                        // 2-th loop around micro-kernel
+                    // 2-th loop around micro-kernel
+                    for (i = 0; i < ib; i += RM) {
                         for (j = 0; j < jb; j += RN) {
-                            ctx.n = std::min(jb - j, RN);
-                            for (i = 0; i < ib; i += RM) {
-                                ctx.m = std::min(ib - i, RM);
-                                if (i + RM > ib) {
-                                    ctx.next += pb * RN;
-                                }
-                                micro_kernel_(
-                                    pb,
-                                    &packed_A[thread_id * CM * pb + i * pb],
-                                    &packed_B[j * pb],
-                                    &C_[(jc + j) * ldc_ + (ic + i)],
-                                    ldc_, 
-                                    &ctx
-                                );
-                            }
+
                         }
                     }
                 }

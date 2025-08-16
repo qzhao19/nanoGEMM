@@ -19,13 +19,14 @@ void matmul_ref(int64_t m,
                 T *C,
                 int64_t ldc) {
     // Simple triple-loop implementation
-    for (int64_t j = 0; j < n; ++j) {
-        for (int64_t i = 0; i < m; ++i) {
+    for (int64_t i = 0; i < m; ++i) {
+        for (int64_t j = 0; j < n; ++j) {
             T sum = static_cast<T>(0.0);
             for (int64_t p = 0; p < k; ++p) {
-                sum += A[p * lda + i] * B[j * ldb + p];
+                // C(i,j) += A(i,p) * B(p,j)
+                sum += A[i * lda + p] * B[p * ldb + j];
             }
-            C[j * ldc + i] = sum;
+            C[i * ldc + j] = sum;
         }
     }
 }
@@ -34,7 +35,7 @@ template <typename T>
 class GEMM4x4Benchmark {
    public:
     GEMM4x4Benchmark(int64_t m, int64_t n, int64_t k)
-        : m_(m), n_(n), k_(k), lda_(m), ldb_(k), ldc_(m) {
+        : m_(m), n_(n), k_(k), lda_(k), ldb_(n), ldc_(n) {
         // Initialize random number generator
         engine_.seed(42);
         allocate_and_generate_data();
@@ -44,6 +45,7 @@ class GEMM4x4Benchmark {
         delete[] A_;
         delete[] B_;
         delete[] C_;
+        delete[] C_ref_;
     }
 
     void run_benchmark() {
@@ -54,33 +56,35 @@ class GEMM4x4Benchmark {
     // Add reference implementation method
     void run_benchmark_ref() {
         // Run the reference GEMM operation
-        matmul_ref(m_, n_, k_, A_, lda_, B_, ldb_, C_, ldc_);
+        matmul_ref(m_, n_, k_, A_, lda_, B_, ldb_, C_ref_, ldc_);
     }
 
    private:
     void allocate_and_generate_data() {
-        A_ = new T[k_ * lda_];
-        B_ = new T[n_ * ldb_];
-        C_ = new T[n_ * ldc_];
+        A_ = new T[m_ * lda_];
+        B_ = new T[k_ * ldb_];
+        C_ = new T[m_ * ldc_];
+        C_ref_ = new T[m_ * ldc_];
 
         std::uniform_real_distribution<T> dist(-1.0, 1.0);
 
         // Initialize matrices with random values
-        for (int64_t p = 0; p < k_; ++p) {
-            for (int64_t i = 0; i < m_; ++i) {
-                A_[p * lda_ + i] = dist(engine_);
-            }
-        }
-
-        for (int64_t j = 0; j < n_; ++j) {
+        for (int64_t i = 0; i < m_; ++i) {
             for (int64_t p = 0; p < k_; ++p) {
-                B_[j * ldb_ + p] = dist(engine_);
+                A_[i * lda_ + p] = dist(engine_);
             }
         }
 
-        for (int64_t j = 0; j < n_; ++j) {
-            for (int64_t i = 0; i < m_; ++i) {
-                C_[j * ldc_ + i] = static_cast<T>(0.0);
+        for (int64_t p = 0; p < k_; ++p) {
+            for (int64_t j = 0; j < n_; ++j) {
+                B_[p * ldb_ + j] = dist(engine_);
+            }
+        }
+
+        for (int64_t i = 0; i < m_; ++i) {
+            for (int64_t j = 0; j < n_; ++j) {
+                C_[i * ldc_ + j] = static_cast<T>(0.0);
+                C_ref_[i * ldc_ + j] = static_cast<T>(0.0);
             }
         }
     }
@@ -94,6 +98,7 @@ class GEMM4x4Benchmark {
     T *A_ = nullptr;
     T *B_ = nullptr;
     T *C_ = nullptr;
+    T *C_ref_ = nullptr;
     std::mt19937 engine_;
 };
 

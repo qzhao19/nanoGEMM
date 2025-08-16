@@ -128,13 +128,14 @@ public:
                 pb = std::min(k - pc, CK);
 
                 // packing sub-matrix A
+                #pragma omp parallel for num_threads(ic_nts)
                 for (i = 0; i < ib; i += RM) {
                     pack_matrix_A(
                         std::min(ib - i, RM),
                         pb,
                         ic + i,
                         pc,
-                        &A_,
+                        A_,
                         &packed_A[i * pb]
                     );
                 }
@@ -150,7 +151,7 @@ public:
                             std::min(jb - j, RN),
                             pc,
                             jc + j,
-                            &B_,
+                            B_,
                             &packed_B[j * pb]
                         );
                     }
@@ -158,6 +159,13 @@ public:
                     // 2-th loop around micro-kernel
                     for (i = 0; i < ib; i += RM) {
                         for (j = 0; j < jb; j += RN) {
+                            micro_kernel_(
+                                pb,
+                                &packed_A[i * pb],
+                                &packed_B[j * pb],
+                                &C_[(ic + i) * ldc_ + (jc + j)],
+                                ldc_
+                            );
 
                         }
                     }

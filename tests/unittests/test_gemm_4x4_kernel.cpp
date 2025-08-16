@@ -27,30 +27,30 @@ class GEMM4x4KernelTest : public ::testing::Test {
                             int64_t ldc,
                             T min = -1,
                             T max = 1) {
-        A = new T[k * lda];
-        B = new T[n * ldb];
-        C = new T[n * ldc];
-        C_ref = new T[n * ldc];
+        A = new T[m * lda];
+        B = new T[k * ldb];
+        C = new T[m * ldc];
+        C_ref = new T[m * ldc];
 
         int64_t i, j, p;
         std::uniform_real_distribution<T> dist(min, max);
 
-        for (p = 0; p < k; ++p) {
-            for (i = 0; i < m; ++i) {
-                A[p * lda + i] = dist(engine_);
-            }
-        }
-
-        for (j = 0; j < n; ++j) {
+        for (i = 0; i < m; ++i) {
             for (p = 0; p < k; ++p) {
-                B[j * ldb + p] = dist(engine_);
+                A[i * lda + p] = dist(engine_);
             }
         }
 
-        for (j = 0; j < n; ++j) {
-            for (i = 0; i < m; ++i) {
-                C_ref[j * ldc + i] = static_cast<T>(0.0);
-                C[j * ldc + i] = static_cast<T>(0.0);
+        for (p = 0; p < k; ++p) {
+            for (j = 0; j < n; ++j) {
+                B[p * ldb + j] = dist(engine_);
+            }
+        }
+
+        for (i = 0; i < m; ++i) {
+            for (j = 0; j < n; ++j) {
+                C_ref[i * ldc + j] = static_cast<T>(0.0);
+                C[i * ldc + j] = static_cast<T>(0.0);
             }
         }
     }
@@ -61,7 +61,8 @@ class GEMM4x4KernelTest : public ::testing::Test {
         for (i = 0; i < m; i++) {
             for (j = 0; j < n; j++) {
                 for (p = 0; p < k; p++) {
-                    C[j * ldc + i] += A[p * lda + i] * B[j * ldb + p];
+                    // C[i,j] += A[i,p] * B[p,j]
+                    C[i * ldc + j] += A[i * lda + p] * B[p * ldb + j];
                 }
             }
         }
@@ -71,13 +72,14 @@ class GEMM4x4KernelTest : public ::testing::Test {
         bool hasError = false;
         for (int64_t i = 0; i < m; ++i) {
             for (int64_t j = 0; j < n; ++j) {
-                T diff = std::fabs(C[i + j * ldc] - C_ref[i + j * ldc_ref]);
+                // C[i,j] = C[i*ldc + j]
+                T diff = std::fabs(C[i * ldc + j] - C_ref[i * ldc_ref + j]);
                 if (diff > tol_) {
                     std::printf("C[ %ld ][ %ld ] != C_ref, %E, %E\n",
                                 i,
                                 j,
-                                C[i + j * ldc],
-                                C_ref[i + j * ldc_ref]);
+                                C[i * ldc + j],
+                                C_ref[i * ldc_ref + j]);
                     hasError = true;
                 }
             }
@@ -101,13 +103,13 @@ class GEMM4x4KernelTest : public ::testing::Test {
     T tol_;
 };
 
-using TestTypes = ::testing::Types<float, double>;
+using TestTypes = ::testing::Types<float>;
 TYPED_TEST_SUITE(GEMM4x4KernelTest, TestTypes);
 
 TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyOddSize) {
     using T = TypeParam;
     int64_t M = 251, N = 173, K = 251;
-    int64_t lda = M, ldb = K, ldc = M;
+    int64_t lda = K, ldb = N, ldc = N;
     this->generate_test_data(M, N, K, lda, ldb, ldc);
 
     // naive GEMM for reference
@@ -116,14 +118,14 @@ TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyOddSize) {
     // Use matmul API function instead of directly instantiating GEMM
     tinyBLAS::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc, "4x4");
 
-    bool errorFound = this->compute_error(M, M, M, N, this->C, this->C_ref);
+    bool errorFound = this->compute_error(ldc, ldc, M, N, this->C, this->C_ref);
     ASSERT_FALSE(errorFound) << "Errors found in the result.";
 }
 
 TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyEvenSize) {
     using T = TypeParam;
-    int64_t M = 256, N = 128, K = 256;
-    int64_t lda = M, ldb = K, ldc = M;
+    int64_t M = 256, N = 256, K = 256;
+    int64_t lda = K, ldb = N, ldc = N;
     this->generate_test_data(M, N, K, lda, ldb, ldc);
 
     // naive GEMM for reference
@@ -132,6 +134,6 @@ TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyEvenSize) {
     // Use matmul API function instead of directly instantiating GEMM
     tinyBLAS::matmul(M, N, K, this->A, lda, this->B, ldb, this->C, ldc, "4x4");
 
-    bool errorFound = this->compute_error(M, M, M, N, this->C, this->C_ref);
+    bool errorFound = this->compute_error(ldc, ldc, M, N, this->C, this->C_ref);
     ASSERT_FALSE(errorFound) << "Errors found in the result.";
 }

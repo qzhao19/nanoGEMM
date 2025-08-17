@@ -33,59 +33,50 @@ private:
     MicroKernelType<TA, TB, TC, RM, RN> micro_kernel_;
 
     void pack_matrix_A(
-        int64_t m, int64_t k, int64_t row_offset, int64_t col_offset, const TA *A, TA *packed_A) {
+        int64_t m, int64_t k, int64_t row_begin, int64_t col_begin, const TA *A, TA *packed_A) {
         int64_t i, p;
         // initialize the pointer array to store start ptr of each row
         const TA *a_ptr[RM];
+        TA cache[RM];
 
-        // points to position of the corresponding row in the col_offset column
-        for (i = 0; i < RM; ++i) {
-            if (i < m) {
-                a_ptr[i] = &A[(row_offset + i) * lda_ + col_offset];
-            } else {
-                a_ptr[i] = &A[(row_offset + 0) * lda_ + col_offset];
-            }
+        for (i = 0; i < std::min(m, RM); ++i) {
+            a_ptr[i] = &A[(row_begin + i) * lda_ + col_begin];
         }
-        // pack in row-major order
-        for (i = 0; i < RM; ++i) {
-            const TA *row = a_ptr[i];
-            for (p = 0; p < k; ++p) {
-                if (i < m) {
-                    *packed_A++ = row[p];
-                } else {
-                    *packed_A++ = static_cast<TA>(0);
-                }
+
+        for (p = 0; p < k; ++p) {
+            // copy elements from sub-matrix A to cache
+            for (i = 0; i < m; ++i) {
+                cache[i] = a_ptr[i][p];
             }
+            
+            // padding 0
+            for (; i < RM; ++i) {
+                cache[i] = static_cast<TA>(0);
+            }
+            
+            // write all elements of the current column at once
+            std::memcpy(&packed_A[p * RM], cache, RM * sizeof(TA));
         }
     };
 
     void pack_matrix_B(
-        int64_t k, int64_t n, int64_t row_offset, int64_t col_offset, const TB *B, TB *packed_B) {
-        
+        int64_t k, int64_t n, int64_t row_begin, int64_t col_begin, const TB *B, TB *packed_B) {
         int64_t p, j;
-        const TB *b_ptr[RN];
+        const TB *b_ptr[k];
         
-        // set the correct starting pointer for each column
-        for (j = 0; j < RN; ++j) {
-            if (j < n) {
-                // points to the position of the corresponding column in the first row
-                b_ptr[j] = &B[row_offset* ldb_ + (col_offset + j)];
-            } else {
-                b_ptr[j] = &B[row_offset* ldb_ + (col_offset + 0)];
-            }
+        // set the correct starting pointer for each row
+        for (p = 0; p < k; ++p) {
+            b_ptr[p] = &B[(row_begin + p) * ldb_ + col_begin];
         }
 
-        // pack in column-major order
-        for (j = 0; j < RN; ++j) {
-            const TB *col = b_ptr[j];
-            for (p = 0; p < k; ++p) {
-                if (j < n) {
-                    *packed_B++ = *col;
-                    // move to the position in the same column of the next row
-                    col += ldb_;
-                } else {
-                    *packed_B++ = static_cast<TB>(0);
-                }
+        for (p = 0; p < k; ++p) {
+            const TB *row = b_ptr[p];
+            for (j = 0; j < n; ++j) {
+                *packed_B++ = *row++; 
+            }
+            // pad with zeros to ensure each row has exactly RN elements
+            for (; j < RN; ++j) {
+                *packed_B++ = static_cast<TB>(0);
             }
         }
     };
@@ -127,7 +118,7 @@ public:
             for (pc = 0; pc < k; pc += CK) {
                 pb = std::min(k - pc, CK);
 
-                // packing sub-matrix A
+                // packing sub-matrix B
                 #pragma omp parallel for num_threads(ic_nts)
                 for (i = 0; i < ib; i += RM) {
                     pack_matrix_A(

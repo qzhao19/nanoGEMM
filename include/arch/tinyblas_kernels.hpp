@@ -208,6 +208,26 @@ inline __m256d shuffle(__m256d a, __m256d b, const int imm8) {
 }
 #endif
 
+#if defined(__SSE__)
+inline __m128 unpacklo(__m128 a, __m128 b) { return _mm_unpacklo_ps(a, b); }
+inline __m128d unpacklo(__m128d a, __m128d b) { return _mm_unpacklo_pd(a, b); }
+#endif
+
+#if defined(__AVX2__)
+inline __m256 unpacklo(__m256 a, __m256 b) {return _mm256_unpacklo_ps(a, b); }
+inline __m256d unpacklo(__m256d a, __m256d b) { return _mm256_unpacklo_pd(a, b); }
+#endif
+
+#if defined(__SSE__)
+inline __m128 unpackhi(__m128 a, __m128 b) { return _mm_unpackhi_ps(a, b); }
+inline __m128d unpackhi(__m128d a, __m128d b) { return _mm_unpackhi_pd(a, b); }
+#endif
+
+#if defined(__AVX2__)
+inline __m256 unpackhi(__m256 a, __m256 b) {return _mm256_unpackhi_ps(a, b); }
+inline __m256d unpackhi(__m256d a, __m256d b) { return _mm256_unpackhi_pd(a, b); }
+#endif
+
 template <typename T>
 struct MicroKernelCtx {
     T *next;
@@ -220,9 +240,15 @@ struct MicroKernelCtx {
 template <typename T>
 using MicroKernelCtxType = MicroKernelCtx<T>;
 
+// template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
+// using MicroKernelType =
+//     std::function<void(int64_t, TA *, TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
+
+
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
 using MicroKernelType =
-    std::function<void(int64_t, TA *, TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
+    std::function<void(int64_t, TA *, TB *, TC *, int64_t)>;
+
 
 template <typename TA, typename TX, typename TY, int64_t RM, int64_t RN>
 using GEMVMicroKernelType = 

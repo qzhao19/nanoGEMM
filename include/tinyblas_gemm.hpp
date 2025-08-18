@@ -37,28 +37,23 @@ private:
         int64_t i, p;
         // initialize the pointer array to store start ptr of each row
         const TA *a_ptr[RM];
-        TA cache[RM];
-
         for (i = 0; i < std::min(m, RM); ++i) {
             a_ptr[i] = &A[(row_begin + i) * lda_ + col_begin];
         }
 
         for (p = 0; p < k; ++p) {
-            // copy elements from sub-matrix A to cache
+            // copy elements from sub-matrix A to packed_A
             for (i = 0; i < m; ++i) {
-                cache[i] = a_ptr[i][p];
+                *packed_A++ = a_ptr[i][p];
             }
-            
-            // padding 0
+            // pad with zeros to ensure each colmun has exactly RN elements
             for (; i < RM; ++i) {
-                cache[i] = static_cast<TA>(0);
+                *packed_A++ = static_cast<TA>(0);
             }
-            
-            // write all elements of the current column at once
-            std::memcpy(&packed_A[p * RM], cache, RM * sizeof(TA));
         }
     };
 
+    
     void pack_matrix_B(
         int64_t k, int64_t n, int64_t row_begin, int64_t col_begin, const TB *B, TB *packed_B) {
         int64_t p, j;
@@ -72,7 +67,7 @@ private:
         for (p = 0; p < k; ++p) {
             const TB *row = b_ptr[p];
             for (j = 0; j < n; ++j) {
-                *packed_B++ = *row++; 
+                *packed_B++ = row[j]; 
             }
             // pad with zeros to ensure each row has exactly RN elements
             for (; j < RN; ++j) {

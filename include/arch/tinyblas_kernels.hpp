@@ -18,7 +18,6 @@
 namespace tinyBLAS {
 namespace detail {
 
-//
 #if defined(__SSE__)
 inline __m128 add(__m128 x, __m128 y) { return _mm_add_ps(x, y); }
 inline __m128 sub(__m128 x, __m128 y) { return _mm_sub_ps(x, y); }
@@ -228,6 +227,48 @@ inline __m256 unpackhi(__m256 a, __m256 b) {return _mm256_unpackhi_ps(a, b); }
 inline __m256d unpackhi(__m256d a, __m256d b) { return _mm256_unpackhi_pd(a, b); }
 #endif
 
+#if defined(__SSE__)
+inline __m128 blend(__m128 a, __m128 b, const int imm8) {
+    return _mm_blend_ps(a, b, imm8);
+}
+inline __m128d blend(__m128d a, __m128d b, const int imm8) {
+    return _mm_blend_pd(a, b, imm8);
+}
+#endif
+
+#if defined(__AVX2__)
+inline __m256 blend(__m256 a, __m256 b, const int imm8) {
+    return _mm256_blend_ps(a, b, imm8);
+}
+
+inline __m256d blend(__m256d a, __m256d b, const int imm8) {
+    return _mm256_blend_pd(a, b, imm8);
+}
+#endif
+
+#if defined(__AVX2__)
+inline __m256d permute4x64(__m256d a, const int imm8) {
+    return _mm256_permute4x64_pd (a, imm8);
+}
+#endif
+
+
+#if defined(__AVX2__)
+inline __m128d extractf128(__m256d a, const int imm8) {
+    return _mm256_extractf128_pd(a, imm8);
+}
+
+inline __m128 extractf128(__m256 a, const int imm8) {
+    return _mm256_extractf128_ps(a, imm8);
+}
+#endif
+
+#if defined(__AVX2__)
+inline __m128d castpd256(__m256d a) {
+    return _mm256_castpd256_pd128(a);
+}
+#endif
+
 template <typename T>
 struct MicroKernelCtx {
     T *next;
@@ -240,15 +281,9 @@ struct MicroKernelCtx {
 template <typename T>
 using MicroKernelCtxType = MicroKernelCtx<T>;
 
-// template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
-// using MicroKernelType =
-//     std::function<void(int64_t, TA *, TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
-
-
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
 using MicroKernelType =
-    std::function<void(int64_t, TA *, TB *, TC *, int64_t)>;
-
+    std::function<void(int64_t, TA *, TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
 
 template <typename TA, typename TX, typename TY, int64_t RM, int64_t RN>
 using GEMVMicroKernelType = 

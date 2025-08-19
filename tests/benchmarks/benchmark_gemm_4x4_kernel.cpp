@@ -146,34 +146,38 @@ static void BM_GEMM_Ref(benchmark::State &state) {
 
 // Define benchmark test cases for float (optimized)
 BENCHMARK_TEMPLATE(BM_GEMM, float)
+    ->Args({251, 173, 251})     // Odd-sized matrix
     ->Args({256, 256, 256})     // Square matrix
     ->Args({512, 512, 512})     // Larger square matrix
-    ->Args({1024, 1024, 1024})  // Even larger
-    ->Args({251, 173, 251})     // Odd-sized matrix
     ->Args({1000, 100, 500})    // Rectangular matrix
+    ->Args({1024, 1024, 1024})  // Even larger
     ->Unit(benchmark::kMillisecond);
 
 // Define benchmark test cases for float (reference)
 BENCHMARK_TEMPLATE(BM_GEMM_Ref, float)
-    ->Args({256, 256, 256})
-    ->Args({512, 512, 512})
-    ->Args({251, 173, 251})  // Odd-sized matrix to compare with optimized
+    ->Args({251, 173, 251})     // Odd-sized matrix
+    ->Args({256, 256, 256})     // Square matrix
+    ->Args({512, 512, 512})     // Larger square matrix
+    ->Args({1000, 100, 500})    // Rectangular matrix
+    ->Args({1024, 1024, 1024})  // Even larger
     ->Unit(benchmark::kMillisecond);
 
 // Define benchmark test cases for double (optimized)
 BENCHMARK_TEMPLATE(BM_GEMM, double)
-    ->Args({256, 256, 256})
-    ->Args({512, 512, 512})
-    ->Args({1024, 1024, 1024})
-    ->Args({251, 173, 251})
-    ->Args({1000, 100, 500})
+    ->Args({251, 173, 251})     // Odd-sized matrix
+    ->Args({256, 256, 256})     // Square matrix
+    ->Args({512, 512, 512})     // Larger square matrix
+    ->Args({1000, 100, 500})    // Rectangular matrix
+    ->Args({1024, 1024, 1024})  // Even larger
     ->Unit(benchmark::kMillisecond);
 
 // Define benchmark test cases for double (reference)
 BENCHMARK_TEMPLATE(BM_GEMM_Ref, double)
-    ->Args({256, 256, 256})
-    ->Args({512, 512, 512})
-    ->Args({251, 173, 251})
+    ->Args({251, 173, 251})     // Odd-sized matrix
+    ->Args({256, 256, 256})     // Square matrix
+    ->Args({512, 512, 512})     // Larger square matrix
+    ->Args({1000, 100, 500})    // Rectangular matrix
+    ->Args({1024, 1024, 1024})  // Even larger
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();

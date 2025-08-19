@@ -103,7 +103,7 @@ public:
         }
 
         TA *packed_A = malloc_aligned<TA>(CK, (CM + 1) * ic_nts, sizeof(TA));
-        TB *packed_B = malloc_aligned<TB>(CK, CN + 1, sizeof(TB));
+        TB *packed_B = malloc_aligned<TB>(CK, (CN + 1) * ic_nts, sizeof(TB));
 
         // 5-th loop around micro-kernel
         for (ic = 0; ic < m; ic += CM) {
@@ -126,33 +126,47 @@ public:
                     );
                 }
 
-                // 3-rd loop around micro-kernel
-                for (jc = 0; jc < n; jc += CN) {
-                    jb = std::min(n - jc, CN);
-
-                    // packing sub-matrix B
-                    for (j = 0; j < jb; j += RN) {
-                        pack_matrix_B(
-                            pb,
-                            std::min(jb - j, RN),
-                            pc,
-                            jc + j,
-                            B_,
-                            &packed_B[j * pb]
-                        );
-                    }
-
-                    // 2-th loop around micro-kernel
-                    for (i = 0; i < ib; i += RM) {
+                #pragma omp parallel num_threads(ic_nts) private(jc, jb, j) 
+                {
+                    int64_t thread_id = omp_get_thread_num();
+                    // call partition_workload_by_thread
+                    int64_t range_start, range_end;
+                    partition_workload_by_thread(n, RN, range_start, range_end);
+                    // 3-rd loop around micro-kernel
+                    for (jc = range_start; jc < range_end; jc += CN) {
+                        jb = std::min(range_end - jc, CN);
+                        // packing sub-matrix B
                         for (j = 0; j < jb; j += RN) {
-                            micro_kernel_(
+                            pack_matrix_B(
                                 pb,
-                                &packed_A[i * pb],
-                                &packed_B[j * pb],
-                                &C_[(ic + i) * ldc_ + (jc + j)],
-                                ldc_
+                                std::min(jb - j, RN),
+                                pc,
+                                jc + j,
+                                B_,
+                                &packed_B[thread_id * CN * pb + j * pb]
                             );
+                        }
+                        // define micro-kernel ctx
+                        MicroKernelCtxType<TB> ctx;
+                        ctx.next = packed_B;
+                        // 2-th loop around micro-kernel
+                        for (i = 0; i < ib; i += RM) {
+                            ctx.m = std::min(ib - i, RM);
+                            if (i + RM > ib) {
+                                ctx.next += pb * RN;
+                            }
+                            for (j = 0; j < jb; j += RN) {
+                                ctx.n = std::min(jb - j, RN);
+                                micro_kernel_(
+                                    pb,
+                                    &packed_A[i * pb],
+                                    &packed_B[thread_id * CN * pb + j * pb],
+                                    &C_[(ic + i) * ldc_ + (jc + j)],
+                                    ldc_,
+                                    &ctx
+                                );
 
+                            }
                         }
                     }
                 }

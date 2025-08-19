@@ -103,7 +103,7 @@ class GEMM4x4KernelTest : public ::testing::Test {
     T tol_;
 };
 
-using TestTypes = ::testing::Types<float>;
+using TestTypes = ::testing::Types<float, double>;
 TYPED_TEST_SUITE(GEMM4x4KernelTest, TestTypes);
 
 TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyOddSize) {
@@ -124,7 +124,7 @@ TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyOddSize) {
 
 TYPED_TEST(GEMM4x4KernelTest, BasicMultiplyEvenSize) {
     using T = TypeParam;
-    int64_t M = 256, N = 256, K = 256;
+    int64_t M = 256, N = 64, K = 256;
     int64_t lda = K, ldb = N, ldc = N;
     this->generate_test_data(M, N, K, lda, ldb, ldc);
 

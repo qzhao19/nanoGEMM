@@ -4,9 +4,10 @@
 #include <algorithm>
 #include <arch/tinyblas_kernels.hpp>
 #include <arch/x86/tinyblas_gemm_4x4_kernel.hpp>
-#include <arch/x86/tinyblas_gemm_8x4_kernel.hpp>
+#include <arch/x86/tinyblas_gemm_8x8_kernel.hpp>
 #include <core/kernel_factory.hpp>
 #include <core/tinyblas_base.hpp>
+#include <omp.h>
 #include <string>
 
 namespace tinyBLAS {
@@ -53,7 +54,6 @@ private:
         }
     };
 
-    
     void pack_matrix_B(
         int64_t k, int64_t n, int64_t row_begin, int64_t col_begin, const TB *B, TB *packed_B) {
         int64_t p, j;
@@ -84,26 +84,26 @@ public:
          TC *C,
          int64_t ldc,
          MicroKernelType<TA, TB, TC, RM, RN> micro_kernel)
-        : A_(A), lda_(lda), B_(B), ldb_(ldb), C_(C), ldc_(ldc), micro_kernel_(micro_kernel){};
+        : A_(A), lda_(lda), B_(B), ldb_(ldb), C_(C), ldc_(ldc), micro_kernel_(micro_kernel) {};
     ~GEMM() = default;
 
     void multiply(int64_t m, int64_t n, int64_t k) {
         // number of threads of inner dimension
-        int64_t ic_nts;
+        int64_t num_threads;
         int64_t i, j, p;
         int64_t ic, jc, pc;
         int64_t ib, jb, pb;
         char *str;
 
         // check if the environment variable exists
-        ic_nts = 1;
+        num_threads = 1;
         str = std::getenv("IC_NTS");
         if (str != nullptr) {
-            ic_nts = std::strtol(str, nullptr, 10);
+            num_threads = std::strtol(str, nullptr, 10);
         }
 
-        TA *packed_A = malloc_aligned<TA>(CK, (CM + 1) * ic_nts, sizeof(TA));
-        TB *packed_B = malloc_aligned<TB>(CK, (CN + 1) * ic_nts, sizeof(TB));
+        TA *packed_A = malloc_aligned<TA>(CK, (CM + 1), sizeof(TA));
+        TB *packed_B = malloc_aligned<TB>(CK, (CN + 1) * num_threads, sizeof(TB));
 
         // 5-th loop around micro-kernel
         for (ic = 0; ic < m; ic += CM) {
@@ -114,7 +114,7 @@ public:
                 pb = std::min(k - pc, CK);
 
                 // packing sub-matrix B
-                #pragma omp parallel for num_threads(ic_nts)
+                #pragma omp parallel for num_threads(num_threads)
                 for (i = 0; i < ib; i += RM) {
                     pack_matrix_A(
                         std::min(ib - i, RM),
@@ -126,54 +126,52 @@ public:
                     );
                 }
 
-                #pragma omp parallel num_threads(ic_nts) private(jc, jb, j) 
-                {
+                // 3-rd loop around micro-kernel
+                #pragma omp parallel for num_threads(num_threads) private(jc, jb, j) 
+                for (jc = 0; jc < n; jc += CN) {
                     int64_t thread_id = omp_get_thread_num();
-                    // call partition_workload_by_thread
-                    int64_t range_start, range_end;
-                    partition_workload_by_thread(n, RN, range_start, range_end);
-                    // 3-rd loop around micro-kernel
-                    for (jc = range_start; jc < range_end; jc += CN) {
-                        jb = std::min(range_end - jc, CN);
-                        // packing sub-matrix B
-                        for (j = 0; j < jb; j += RN) {
-                            pack_matrix_B(
-                                pb,
-                                std::min(jb - j, RN),
-                                pc,
-                                jc + j,
-                                B_,
-                                &packed_B[thread_id * CN * pb + j * pb]
-                            );
-                        }
-                        // define micro-kernel ctx
-                        MicroKernelCtxType<TB> ctx;
-                        ctx.next = packed_B;
-                        // 2-th loop around micro-kernel
-                        for (i = 0; i < ib; i += RM) {
-                            ctx.m = std::min(ib - i, RM);
-                            if (i + RM > ib) {
-                                ctx.next += pb * RN;
-                            }
-                            for (j = 0; j < jb; j += RN) {
-                                ctx.n = std::min(jb - j, RN);
-                                micro_kernel_(
-                                    pb,
-                                    &packed_A[i * pb],
-                                    &packed_B[thread_id * CN * pb + j * pb],
-                                    &C_[(ic + i) * ldc_ + (jc + j)],
-                                    ldc_,
-                                    &ctx
-                                );
+                    jb = std::min(n - jc, CN);
+                    
+                    // packing sub-matrix B
+                    for (j = 0; j < jb; j += RN) {
+                        pack_matrix_B(
+                            pb,
+                            std::min(jb - j, RN),
+                            pc,
+                            jc + j,
+                            B_,
+                            &packed_B[thread_id * CN * pb + j * pb]
+                        );
+                    }
+                    // define micro-kernel ctx
+                    MicroKernelCtxType<TB> ctx;
+                    ctx.next = packed_B;
 
-                            }
+                    // 2-th loop around micro-kernel
+                    for (i = 0; i < ib; i += RM) {
+                        ctx.m = std::min(ib - i, RM);
+                        if (i + RM > ib) {
+                            ctx.next += pb * RN;
+                        }
+                        for (j = 0; j < jb; j += RN) {
+                            ctx.n = std::min(jb - j, RN);
+                            micro_kernel_(
+                                pb,
+                                &packed_A[i * pb],
+                                &packed_B[thread_id * CN * pb + j * pb],
+                                &C_[(ic + i) * ldc_ + (jc + j)],
+                                ldc_,
+                                &ctx
+                            );
+
                         }
                     }
                 }
+                
             }
         }
-        free(packed_A);
-        free(packed_B);
+        free_aligned(packed_A);
+        free_aligned(packed_B);
     };
 };
 

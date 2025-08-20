@@ -257,13 +257,13 @@ void AddDot_4x4_kernel_double(
     }
 
     // transpose a 4x4 matrix: convert from column-major order to row-major order
-    __m128d c_col0_lo_xmm = castpd256(c_col0_ymm);     // col0[0:1]
+    __m128d c_col0_lo_xmm = castpd256(c_col0_ymm);        // col0[0:1]
     __m128d c_col0_hi_xmm = extractf128(c_col0_ymm, 1);   // col0[2:3]
-    __m128d c_col1_lo_xmm = castpd256(c_col1_ymm);     // col1[0:1]
+    __m128d c_col1_lo_xmm = castpd256(c_col1_ymm);        // col1[0:1]
     __m128d c_col1_hi_xmm = extractf128(c_col1_ymm, 1);   // col1[2:3]
-    __m128d c_col2_lo_xmm = castpd256(c_col2_ymm);     // col2[0:1]
+    __m128d c_col2_lo_xmm = castpd256(c_col2_ymm);        // col2[0:1]
     __m128d c_col2_hi_xmm = extractf128(c_col2_ymm, 1);   // col2[2:3]
-    __m128d c_col3_lo_xmm = castpd256(c_col3_ymm);     // col3[0:1]
+    __m128d c_col3_lo_xmm = castpd256(c_col3_ymm);        // col3[0:1]
     __m128d c_col3_hi_xmm = extractf128(c_col3_ymm, 1);   // col3[2:3]
 
     // lower-128 
@@ -279,10 +279,10 @@ void AddDot_4x4_kernel_double(
     __m128d c_row3_hi_xmm = unpackhi(c_col2_hi_xmm, c_col3_hi_xmm); // col2[3], col3[3]
 
     // set back to _m256d register from _m128d register
-    c_row0_ymm = _mm256_set_m128d(c_row0_hi_xmm, c_row0_lo_xmm); // [col0[0], col1[0], col2[0], col3[0]]
-    c_row1_ymm = _mm256_set_m128d(c_row1_hi_xmm, c_row1_lo_xmm); // [col0[1], col1[1], col2[1], col3[1]]
-    c_row2_ymm = _mm256_set_m128d(c_row2_hi_xmm, c_row2_lo_xmm); // [col0[2], col1[2], col2[2], col3[2]]
-    c_row3_ymm = _mm256_set_m128d(c_row3_hi_xmm, c_row3_lo_xmm); // [col0[3], col1[3], col2[3], col3[3]]
+    c_row0_ymm = pack128(c_row0_hi_xmm, c_row0_lo_xmm); // [col0[0], col1[0], col2[0], col3[0]]
+    c_row1_ymm = pack128(c_row1_hi_xmm, c_row1_lo_xmm); // [col0[1], col1[1], col2[1], col3[1]]
+    c_row2_ymm = pack128(c_row2_hi_xmm, c_row2_lo_xmm); // [col0[2], col1[2], col2[2], col3[2]]
+    c_row3_ymm = pack128(c_row3_hi_xmm, c_row3_lo_xmm); // [col0[3], col1[3], col2[3], col3[3]]
 
     __m256d alpha_ymm = set1<__m256d>(alpha);
     __m256d beta_ymm = set1<__m256d>(beta);

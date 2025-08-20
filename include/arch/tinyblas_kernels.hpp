@@ -252,7 +252,6 @@ inline __m256d permute4x64(__m256d a, const int imm8) {
 }
 #endif
 
-
 #if defined(__AVX2__)
 inline __m128d extractf128(__m256d a, const int imm8) {
     return _mm256_extractf128_pd(a, imm8);
@@ -266,6 +265,16 @@ inline __m128 extractf128(__m256 a, const int imm8) {
 #if defined(__AVX2__)
 inline __m128d castpd256(__m256d a) {
     return _mm256_castpd256_pd128(a);
+}
+#endif
+
+#if defined(__AVX2__)
+inline __m256 pack128(__m128 hi, __m128 lo) {
+    return _mm256_set_m128(hi, lo);
+}
+
+inline __m256d pack128(__m128d hi, __m128d lo) {
+    return _mm256_set_m128d(hi, lo);
 }
 #endif
 

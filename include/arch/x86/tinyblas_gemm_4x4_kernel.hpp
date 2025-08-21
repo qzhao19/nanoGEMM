@@ -130,25 +130,11 @@ void AddDot_4x4_kernel_float(
     __m128 beta_xmm = set1<__m128>(beta);
 
     // add the transposed result to matrix C
-    c_row0 = c + 0 * ldc;
-    c_row1 = c + 1 * ldc;
-    c_row2 = c + 2 * ldc;
-    c_row3 = c + 3 * ldc;
-
-    c_row0_orig_xmm = load<__m128>(c_row0);
-    c_row1_orig_xmm = load<__m128>(c_row1);
-    c_row2_orig_xmm = load<__m128>(c_row2);
-    c_row3_orig_xmm = load<__m128>(c_row3);
-
-    c_row0_orig_xmm = add(mul(beta_xmm, c_row0_orig_xmm), mul(alpha_xmm, c_row0_xmm));
-    c_row1_orig_xmm = add(mul(beta_xmm, c_row1_orig_xmm), mul(alpha_xmm, c_row1_xmm));
-    c_row2_orig_xmm = add(mul(beta_xmm, c_row2_orig_xmm), mul(alpha_xmm, c_row2_xmm));
-    c_row3_orig_xmm = add(mul(beta_xmm, c_row3_orig_xmm), mul(alpha_xmm, c_row3_xmm));
-
-    store(c_row0, c_row0_orig_xmm);
-    store(c_row1, c_row1_orig_xmm);
-    store(c_row2, c_row2_orig_xmm);
-    store(c_row3, c_row3_orig_xmm);
+    float *c_ptr = c;
+    store(c_ptr, add(mul(beta_xmm, load<__m128>(c_ptr)), mul(alpha_xmm, c_row0_xmm))); c_ptr += ldc;
+    store(c_ptr, add(mul(beta_xmm, load<__m128>(c_ptr)), mul(alpha_xmm, c_row1_xmm))); c_ptr += ldc;
+    store(c_ptr, add(mul(beta_xmm, load<__m128>(c_ptr)), mul(alpha_xmm, c_row2_xmm))); c_ptr += ldc;
+    store(c_ptr, add(mul(beta_xmm, load<__m128>(c_ptr)), mul(alpha_xmm, c_row3_xmm)));
 }
 
 template <int64_t RM, int64_t RN>
@@ -288,25 +274,11 @@ void AddDot_4x4_kernel_double(
     __m256d beta_ymm = set1<__m256d>(beta);
 
     // add the transposed result to matrix C
-    c_row0 = c + 0 * ldc;
-    c_row1 = c + 1 * ldc;
-    c_row2 = c + 2 * ldc;
-    c_row3 = c + 3 * ldc;
-
-    c_row0_orig_ymm = load<__m256d>(c_row0);
-    c_row1_orig_ymm = load<__m256d>(c_row1);
-    c_row2_orig_ymm = load<__m256d>(c_row2);
-    c_row3_orig_ymm = load<__m256d>(c_row3);
-
-    c_row0_orig_ymm = add(mul(beta_ymm, c_row0_orig_ymm), mul(alpha_ymm, c_row0_ymm));
-    c_row1_orig_ymm = add(mul(beta_ymm, c_row1_orig_ymm), mul(alpha_ymm, c_row1_ymm));
-    c_row2_orig_ymm = add(mul(beta_ymm, c_row2_orig_ymm), mul(alpha_ymm, c_row2_ymm));
-    c_row3_orig_ymm = add(mul(beta_ymm, c_row3_orig_ymm), mul(alpha_ymm, c_row3_ymm));
-
-    store(c_row0, c_row0_orig_ymm);
-    store(c_row1, c_row1_orig_ymm);
-    store(c_row2, c_row2_orig_ymm);
-    store(c_row3, c_row3_orig_ymm);
+    double *c_ptr = c;
+    store(c_ptr, add(mul(beta_ymm, load<__m256d>(c_ptr)), mul(alpha_ymm, c_row0_ymm))); c_ptr += ldc;
+    store(c_ptr, add(mul(beta_ymm, load<__m256d>(c_ptr)), mul(alpha_ymm, c_row1_ymm))); c_ptr += ldc;
+    store(c_ptr, add(mul(beta_ymm, load<__m256d>(c_ptr)), mul(alpha_ymm, c_row2_ymm))); c_ptr += ldc;
+    store(c_ptr, add(mul(beta_ymm, load<__m256d>(c_ptr)), mul(alpha_ymm, c_row3_ymm)));
 }
 
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>

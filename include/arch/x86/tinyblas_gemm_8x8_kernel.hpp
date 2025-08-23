@@ -48,32 +48,32 @@ void AddDot_8x8_kernel_float(
         a_col_ymm1 = load<__m256>(a + 8);
 
         // handle a[0:7] * b[0] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(0));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(0));
         c_col0_ymm = madd(a_col_ymm0, tmp_ymm, c_col0_ymm);
         // handle a[0:7] * b[1] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(1));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(1));
         c_col1_ymm = madd(a_col_ymm0, tmp_ymm, c_col1_ymm);
         // handle a[0:7] * b[2] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(2));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(2));
         c_col2_ymm = madd(a_col_ymm0, tmp_ymm, c_col2_ymm);
         // handle a[0:7] * b[3] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(3));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(3));
         c_col3_ymm = madd(a_col_ymm0, tmp_ymm, c_col3_ymm);
 
         // pre-load b for next k = 2 
         b_row_ymm1 = load<__m256>(b + 8);
 
         // handle a[0:7] * b[4] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(4));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(4));
         c_col4_ymm = madd(a_col_ymm0, tmp_ymm, c_col4_ymm);
         // handle a[0:7] * b[5] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(5));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(5));
         c_col5_ymm = madd(a_col_ymm0, tmp_ymm, c_col5_ymm);
         // handle a[0:7] * b[6] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(6));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(6));
         c_col6_ymm = madd(a_col_ymm0, tmp_ymm, c_col6_ymm);
         // handle a[0:7] * b[7] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm0, _mm256_set1_epi32(7));
+        tmp_ymm = permutevar8x32(b_row_ymm0, set1<__m256i>(7));
         c_col7_ymm = madd(a_col_ymm0, tmp_ymm, c_col7_ymm);
 
         // prefetch data
@@ -84,32 +84,32 @@ void AddDot_8x8_kernel_float(
         a_col_ymm0 = load<__m256>(a + 16);
         
         // handle a[8:15] * b[8] for 2ed iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(0));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(0));
         c_col0_ymm = madd(a_col_ymm1, tmp_ymm, c_col0_ymm);
         // handle a[8:15] * b[9] for 2ed iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(1));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(1));
         c_col1_ymm = madd(a_col_ymm1, tmp_ymm, c_col1_ymm);
         // handle a[8:15] * b[10] for 2ed iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(2));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(2));
         c_col2_ymm = madd(a_col_ymm1, tmp_ymm, c_col2_ymm);
         // handle a[8:15] * b[11] for 2ed iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(3));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(3));
         c_col3_ymm = madd(a_col_ymm1, tmp_ymm, c_col3_ymm);
 
         // pre-load B for next iteration
         b_row_ymm0 = load<__m256>(b + 16);
 
         // handle a[0:7] * b[4] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(4));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(4));
         c_col4_ymm = madd(a_col_ymm1, tmp_ymm, c_col4_ymm);
         // handle a[0:7] * b[5] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(5));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(5));
         c_col5_ymm = madd(a_col_ymm1, tmp_ymm, c_col5_ymm);
         // handle a[0:7] * b[6] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(6));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(6));
         c_col6_ymm = madd(a_col_ymm1, tmp_ymm, c_col6_ymm);
         // handle a[0:7] * b[7] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm1, _mm256_set1_epi32(7));
+        tmp_ymm = permutevar8x32(b_row_ymm1, set1<__m256i>(7));
         c_col7_ymm = madd(a_col_ymm1, tmp_ymm, c_col7_ymm);
 
         // update pointer
@@ -118,33 +118,33 @@ void AddDot_8x8_kernel_float(
     }
 
     for (p = 0; p < k_remainder; ++p) {
-        __m256 a_col_ymm = _mm256_loadu_ps(a);
-        __m256 b_row_ymm = _mm256_loadu_ps(b);
+        __m256 a_col_ymm = load<__m256>(a);
+        __m256 b_row_ymm = load<__m256>(b);
 
         // handle a[0:7] * b[0] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(0));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(0));
         c_col0_ymm = madd(a_col_ymm, tmp_ymm, c_col0_ymm);
         // handle a[0:7] * b[1] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(1));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(1));
         c_col1_ymm = madd(a_col_ymm, tmp_ymm, c_col1_ymm);
         // handle a[0:7] * b[2] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(2));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(2));
         c_col2_ymm = madd(a_col_ymm, tmp_ymm, c_col2_ymm);
         // handle a[0:7] * b[3] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(3));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(3));
         c_col3_ymm = madd(a_col_ymm, tmp_ymm, c_col3_ymm);
 
         // handle a[0:7] * b[4] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(4));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(4));
         c_col4_ymm = madd(a_col_ymm, tmp_ymm, c_col4_ymm);
         // handle a[0:7] * b[5] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(5));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(5));
         c_col5_ymm = madd(a_col_ymm, tmp_ymm, c_col5_ymm);
         // handle a[0:7] * b[6] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(6));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(6));
         c_col6_ymm = madd(a_col_ymm, tmp_ymm, c_col6_ymm);
         // handle a[0:7] * b[7] for 1st iteration
-        tmp_ymm = _mm256_permutevar8x32_ps(b_row_ymm, _mm256_set1_epi32(7));
+        tmp_ymm = permutevar8x32(b_row_ymm, set1<__m256i>(7));
         c_col7_ymm = madd(a_col_ymm, tmp_ymm, c_col7_ymm);
 
         // update pointer
@@ -156,37 +156,37 @@ void AddDot_8x8_kernel_float(
     // unpack interleave pairs of columns
     __m256 col01_lo_ymm, col01_hi_ymm, col23_lo_ymm, col23_hi_ymm;
     __m256 col45_lo_ymm, col45_hi_ymm, col67_lo_ymm, col67_hi_ymm;
-    col01_lo_ymm = _mm256_unpacklo_ps(c_col0_ymm, c_col1_ymm); // [c0[0],c1[0],c0[1],c1[1], c0[4],c1[4],c0[5],c1[5]]
-    col01_hi_ymm = _mm256_unpackhi_ps(c_col0_ymm, c_col1_ymm); // [c0[2],c1[2],c0[3],c1[3], c0[6],c1[6],c0[7],c1[7]]
-    col23_lo_ymm = _mm256_unpacklo_ps(c_col2_ymm, c_col3_ymm);
-    col23_hi_ymm = _mm256_unpackhi_ps(c_col2_ymm, c_col3_ymm);
-    col45_lo_ymm = _mm256_unpacklo_ps(c_col4_ymm, c_col5_ymm);
-    col45_hi_ymm = _mm256_unpackhi_ps(c_col4_ymm, c_col5_ymm);
-    col67_lo_ymm = _mm256_unpacklo_ps(c_col6_ymm, c_col7_ymm);
-    col67_hi_ymm = _mm256_unpackhi_ps(c_col6_ymm, c_col7_ymm);
+    col01_lo_ymm = unpacklo(c_col0_ymm, c_col1_ymm); // [c0[0],c1[0],c0[1],c1[1], c0[4],c1[4],c0[5],c1[5]]
+    col01_hi_ymm = unpackhi(c_col0_ymm, c_col1_ymm); // [c0[2],c1[2],c0[3],c1[3], c0[6],c1[6],c0[7],c1[7]]
+    col23_lo_ymm = unpacklo(c_col2_ymm, c_col3_ymm);
+    col23_hi_ymm = unpackhi(c_col2_ymm, c_col3_ymm);
+    col45_lo_ymm = unpacklo(c_col4_ymm, c_col5_ymm);
+    col45_hi_ymm = unpackhi(c_col4_ymm, c_col5_ymm);
+    col67_lo_ymm = unpacklo(c_col6_ymm, c_col7_ymm);
+    col67_hi_ymm = unpackhi(c_col6_ymm, c_col7_ymm);
 
     // shuffle interleave 2-element groups
     __m256 row04_lo_ymm, row15_lo_ymm, row26_lo_ymm, row37_lo_ymm;
     __m256 row04_hi_ymm, row15_hi_ymm, row26_hi_ymm, row37_hi_ymm;
-    row04_lo_ymm = _mm256_shuffle_ps(col01_lo_ymm, col23_lo_ymm, _MM_SHUFFLE(1, 0, 1, 0)); // [c0[0],c1[0],c2[0],c3[0], c0[4],c1[4],c2[4],c3[4]]
-    row15_lo_ymm = _mm256_shuffle_ps(col01_lo_ymm, col23_lo_ymm, _MM_SHUFFLE(3, 2, 3, 2)); // [c0[1],c1[1],c2[1],c3[1], c0[5],c1[5],c2[5],c3[5]]
-    row26_lo_ymm = _mm256_shuffle_ps(col01_hi_ymm, col23_hi_ymm, _MM_SHUFFLE(1, 0, 1, 0));
-    row37_lo_ymm = _mm256_shuffle_ps(col01_hi_ymm, col23_hi_ymm, _MM_SHUFFLE(3, 2, 3, 2));
-    row04_hi_ymm = _mm256_shuffle_ps(col45_lo_ymm, col67_lo_ymm, _MM_SHUFFLE(1, 0, 1, 0));
-    row15_hi_ymm = _mm256_shuffle_ps(col45_lo_ymm, col67_lo_ymm, _MM_SHUFFLE(3, 2, 3, 2));
-    row26_hi_ymm = _mm256_shuffle_ps(col45_hi_ymm, col67_hi_ymm, _MM_SHUFFLE(1, 0, 1, 0));
-    row37_hi_ymm = _mm256_shuffle_ps(col45_hi_ymm, col67_hi_ymm, _MM_SHUFFLE(3, 2, 3, 2));
+    row04_lo_ymm = shuffle(col01_lo_ymm, col23_lo_ymm, _MM_SHUFFLE(1, 0, 1, 0)); // [c0[0],c1[0],c2[0],c3[0], c0[4],c1[4],c2[4],c3[4]]
+    row15_lo_ymm = shuffle(col01_lo_ymm, col23_lo_ymm, _MM_SHUFFLE(3, 2, 3, 2)); // [c0[1],c1[1],c2[1],c3[1], c0[5],c1[5],c2[5],c3[5]]
+    row26_lo_ymm = shuffle(col01_hi_ymm, col23_hi_ymm, _MM_SHUFFLE(1, 0, 1, 0));
+    row37_lo_ymm = shuffle(col01_hi_ymm, col23_hi_ymm, _MM_SHUFFLE(3, 2, 3, 2));
+    row04_hi_ymm = shuffle(col45_lo_ymm, col67_lo_ymm, _MM_SHUFFLE(1, 0, 1, 0));
+    row15_hi_ymm = shuffle(col45_lo_ymm, col67_lo_ymm, _MM_SHUFFLE(3, 2, 3, 2));
+    row26_hi_ymm = shuffle(col45_hi_ymm, col67_hi_ymm, _MM_SHUFFLE(1, 0, 1, 0));
+    row37_hi_ymm = shuffle(col45_hi_ymm, col67_hi_ymm, _MM_SHUFFLE(3, 2, 3, 2));
 
     // permute interleave 4-element groups from different vectors
     // c_rowX_ymm variable stores the correct transposed row data
-    __m256 c_row0_ymm = _mm256_permute2f128_ps(row04_lo_ymm, row04_hi_ymm, 0x20); // [c0[0]..c3[0], c4[0]..c7[0]] -> row 0
-    __m256 c_row1_ymm = _mm256_permute2f128_ps(row15_lo_ymm, row15_hi_ymm, 0x20); // [c0[1]..c3[1], c4[1]..c7[1]] -> row 1
-    __m256 c_row2_ymm = _mm256_permute2f128_ps(row26_lo_ymm, row26_hi_ymm, 0x20); // [c0[2]..c3[2], c4[2]..c7[2]] -> row 2
-    __m256 c_row3_ymm = _mm256_permute2f128_ps(row37_lo_ymm, row37_hi_ymm, 0x20); // [c0[3]..c3[3], c4[3]..c7[3]] -> row 3
-    __m256 c_row4_ymm = _mm256_permute2f128_ps(row04_lo_ymm, row04_hi_ymm, 0x31); // [c0[4]..c3[4], c4[4]..c7[4]] -> row 4
-    __m256 c_row5_ymm = _mm256_permute2f128_ps(row15_lo_ymm, row15_hi_ymm, 0x31); // [c0[5]..c3[5], c4[5]..c7[5]] -> row 5
-    __m256 c_row6_ymm = _mm256_permute2f128_ps(row26_lo_ymm, row26_hi_ymm, 0x31); // [c0[6]..c3[6], c4[6]..c7[6]] -> row 6
-    __m256 c_row7_ymm = _mm256_permute2f128_ps(row37_lo_ymm, row37_hi_ymm, 0x31); // [c0[7]..c3[7], c4[7]..c7[7]] -> row 7
+    __m256 c_row0_ymm = permute2f128(row04_lo_ymm, row04_hi_ymm, 0x20); // [c0[0]..c3[0], c4[0]..c7[0]] -> row 0
+    __m256 c_row1_ymm = permute2f128(row15_lo_ymm, row15_hi_ymm, 0x20); // [c0[1]..c3[1], c4[1]..c7[1]] -> row 1
+    __m256 c_row2_ymm = permute2f128(row26_lo_ymm, row26_hi_ymm, 0x20); // [c0[2]..c3[2], c4[2]..c7[2]] -> row 2
+    __m256 c_row3_ymm = permute2f128(row37_lo_ymm, row37_hi_ymm, 0x20); // [c0[3]..c3[3], c4[3]..c7[3]] -> row 3
+    __m256 c_row4_ymm = permute2f128(row04_lo_ymm, row04_hi_ymm, 0x31); // [c0[4]..c3[4], c4[4]..c7[4]] -> row 4
+    __m256 c_row5_ymm = permute2f128(row15_lo_ymm, row15_hi_ymm, 0x31); // [c0[5]..c3[5], c4[5]..c7[5]] -> row 5
+    __m256 c_row6_ymm = permute2f128(row26_lo_ymm, row26_hi_ymm, 0x31); // [c0[6]..c3[6], c4[6]..c7[6]] -> row 6
+    __m256 c_row7_ymm = permute2f128(row37_lo_ymm, row37_hi_ymm, 0x31); // [c0[7]..c3[7], c4[7]..c7[7]] -> row 7
 
     // write back result：C = alpha * (A*B) + beta * C
     __m256 alpha_ymm = _mm256_set1_ps(alpha);
@@ -211,14 +211,14 @@ void AddDot_8x8_kernel_double(
     double alpha = 1.0, beta = 1.0;
 
     // 16 accumulators for 8x8 double matrix (8 columns * 2 regs/col)
-    __m256d c_col0_ymm0 = _mm256_setzero_pd(); __m256d c_col0_ymm1 = _mm256_setzero_pd();
-    __m256d c_col1_ymm0 = _mm256_setzero_pd(); __m256d c_col1_ymm1 = _mm256_setzero_pd();
-    __m256d c_col2_ymm0 = _mm256_setzero_pd(); __m256d c_col2_ymm1 = _mm256_setzero_pd();
-    __m256d c_col3_ymm0 = _mm256_setzero_pd(); __m256d c_col3_ymm1 = _mm256_setzero_pd();
-    __m256d c_col4_ymm0 = _mm256_setzero_pd(); __m256d c_col4_ymm1 = _mm256_setzero_pd();
-    __m256d c_col5_ymm0 = _mm256_setzero_pd(); __m256d c_col5_ymm1 = _mm256_setzero_pd();
-    __m256d c_col6_ymm0 = _mm256_setzero_pd(); __m256d c_col6_ymm1 = _mm256_setzero_pd();
-    __m256d c_col7_ymm0 = _mm256_setzero_pd(); __m256d c_col7_ymm1 = _mm256_setzero_pd();
+    __m256d c_col0_ymm0 = setzeros<__m256d>(); __m256d c_col0_ymm1 = setzeros<__m256d>();
+    __m256d c_col1_ymm0 = setzeros<__m256d>(); __m256d c_col1_ymm1 = setzeros<__m256d>();
+    __m256d c_col2_ymm0 = setzeros<__m256d>(); __m256d c_col2_ymm1 = setzeros<__m256d>();
+    __m256d c_col3_ymm0 = setzeros<__m256d>(); __m256d c_col3_ymm1 = setzeros<__m256d>();
+    __m256d c_col4_ymm0 = setzeros<__m256d>(); __m256d c_col4_ymm1 = setzeros<__m256d>();
+    __m256d c_col5_ymm0 = setzeros<__m256d>(); __m256d c_col5_ymm1 = setzeros<__m256d>();
+    __m256d c_col6_ymm0 = setzeros<__m256d>(); __m256d c_col6_ymm1 = setzeros<__m256d>();
+    __m256d c_col7_ymm0 = setzeros<__m256d>(); __m256d c_col7_ymm1 = setzeros<__m256d>();
     
     // define a0 a1 b0 b1, initializ a0 and b0
     __m256d tmp_ymm;
@@ -232,42 +232,42 @@ void AddDot_8x8_kernel_double(
         b_row_ymm1 = load<__m256d>(b + 4);
 
         // handle a[0:3] * b[0] and a[4:7] * b[0] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm0, 0x00);
+        tmp_ymm = permute4x64(b_row_ymm0, 0x00);
         c_col0_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col0_ymm0);
         c_col0_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col0_ymm1);
 
         // handle a[0:3] * b[1] and a[4:7] * b[1] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm0, 0x55);
+        tmp_ymm = permute4x64(b_row_ymm0, 0x55);
         c_col1_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col1_ymm0);
         c_col1_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col1_ymm1);
 
          // handle a[0:3] * b[2] and a[4:7] * b[2] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm0, 0xAA);
+        tmp_ymm = permute4x64(b_row_ymm0, 0xAA);
         c_col2_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col2_ymm0);
         c_col2_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col2_ymm1);
 
         // handle a[0:3] * b[3] and a[4:7] * b[3] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm0, 0xFF);
+        tmp_ymm = permute4x64(b_row_ymm0, 0xFF);
         c_col3_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col3_ymm0);
         c_col3_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col3_ymm1);
 
         // handle a[0:3] * b[4] and a[4:7] * b[4] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm1, 0x00);
+        tmp_ymm = permute4x64(b_row_ymm1, 0x00);
         c_col4_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col4_ymm0);
         c_col4_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col4_ymm1);
 
         // handle a[0:3] * b[5] and a[4:7] * b[5] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm1, 0x55);
+        tmp_ymm = permute4x64(b_row_ymm1, 0x55);
         c_col5_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col5_ymm0);
         c_col5_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col5_ymm1);
 
         // handle a[0:3] * b[6] and a[4:7] * b[6] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm1, 0xAA);
+        tmp_ymm = permute4x64(b_row_ymm1, 0xAA);
         c_col6_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col6_ymm0);
         c_col6_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col6_ymm1);
 
         // handle a[0:3] * b[4] and a[4:7] * b[4] for 1st iteration
-        tmp_ymm = _mm256_permute4x64_pd(b_row_ymm1, 0xFF);
+        tmp_ymm = permute4x64(b_row_ymm1, 0xFF);
         c_col7_ymm0 = madd(a_col_ymm0, tmp_ymm, c_col7_ymm0);
         c_col7_ymm1 = madd(a_col_ymm1, tmp_ymm, c_col7_ymm1);
 
@@ -280,56 +280,56 @@ void AddDot_8x8_kernel_double(
     // Step 1: Unpack 4x4 blocks
     __m256d col01_lo_ymm0, col01_hi_ymm0, col23_lo_ymm0, col23_hi_ymm0;
     __m256d col01_lo_ymm1, col01_hi_ymm1, col23_lo_ymm1, col23_hi_ymm1;
-    col01_lo_ymm0 = _mm256_unpacklo_pd(c_col0_ymm0, c_col1_ymm0);
-    col01_hi_ymm0 = _mm256_unpackhi_pd(c_col0_ymm0, c_col1_ymm0);
-    col23_lo_ymm0 = _mm256_unpacklo_pd(c_col2_ymm0, c_col3_ymm0);
-    col23_hi_ymm0 = _mm256_unpackhi_pd(c_col2_ymm0, c_col3_ymm0);
-    col01_lo_ymm1 = _mm256_unpacklo_pd(c_col0_ymm1, c_col1_ymm1);
-    col01_hi_ymm1 = _mm256_unpackhi_pd(c_col0_ymm1, c_col1_ymm1);
-    col23_lo_ymm1 = _mm256_unpacklo_pd(c_col2_ymm1, c_col3_ymm1);
-    col23_hi_ymm1 = _mm256_unpackhi_pd(c_col2_ymm1, c_col3_ymm1);
+    col01_lo_ymm0 = unpacklo(c_col0_ymm0, c_col1_ymm0);
+    col01_hi_ymm0 = unpackhi(c_col0_ymm0, c_col1_ymm0);
+    col23_lo_ymm0 = unpacklo(c_col2_ymm0, c_col3_ymm0);
+    col23_hi_ymm0 = unpackhi(c_col2_ymm0, c_col3_ymm0);
+    col01_lo_ymm1 = unpacklo(c_col0_ymm1, c_col1_ymm1);
+    col01_hi_ymm1 = unpackhi(c_col0_ymm1, c_col1_ymm1);
+    col23_lo_ymm1 = unpacklo(c_col2_ymm1, c_col3_ymm1);
+    col23_hi_ymm1 = unpackhi(c_col2_ymm1, c_col3_ymm1);
 
     // Step 2: Permute to get rows 0-3 (first 4 elements)
     __m256d row0_ymm0, row1_ymm0, row2_ymm0, row3_ymm0;
-    row0_ymm0 = _mm256_permute2f128_pd(col01_lo_ymm0, col23_lo_ymm0, 0x20);
-    row1_ymm0 = _mm256_permute2f128_pd(col01_hi_ymm0, col23_hi_ymm0, 0x20);
-    row2_ymm0 = _mm256_permute2f128_pd(col01_lo_ymm0, col23_lo_ymm0, 0x31);
-    row3_ymm0 = _mm256_permute2f128_pd(col01_hi_ymm0, col23_hi_ymm0, 0x31);
+    row0_ymm0 = permute2f128(col01_lo_ymm0, col23_lo_ymm0, 0x20);
+    row1_ymm0 = permute2f128(col01_hi_ymm0, col23_hi_ymm0, 0x20);
+    row2_ymm0 = permute2f128(col01_lo_ymm0, col23_lo_ymm0, 0x31);
+    row3_ymm0 = permute2f128(col01_hi_ymm0, col23_hi_ymm0, 0x31);
 
     // Step 3: Repeat for other half
-    col01_lo_ymm0 = _mm256_unpacklo_pd(c_col4_ymm0, c_col5_ymm0);
-    col01_hi_ymm0 = _mm256_unpackhi_pd(c_col4_ymm0, c_col5_ymm0);
-    col23_lo_ymm0 = _mm256_unpacklo_pd(c_col6_ymm0, c_col7_ymm0);
-    col23_hi_ymm0 = _mm256_unpackhi_pd(c_col6_ymm0, c_col7_ymm0);
+    col01_lo_ymm0 = unpacklo(c_col4_ymm0, c_col5_ymm0);
+    col01_hi_ymm0 = unpackhi(c_col4_ymm0, c_col5_ymm0);
+    col23_lo_ymm0 = unpacklo(c_col6_ymm0, c_col7_ymm0);
+    col23_hi_ymm0 = unpackhi(c_col6_ymm0, c_col7_ymm0);
 
     // Step 4: Permute to get rows 0-3 (last 4 elements)
     __m256d row0_ymm1, row1_ymm1, row2_ymm1, row3_ymm1;
-    row0_ymm1 = _mm256_permute2f128_pd(col01_lo_ymm0, col23_lo_ymm0, 0x20);
-    row1_ymm1 = _mm256_permute2f128_pd(col01_hi_ymm0, col23_hi_ymm0, 0x20);
-    row2_ymm1 = _mm256_permute2f128_pd(col01_lo_ymm0, col23_lo_ymm0, 0x31);
-    row3_ymm1 = _mm256_permute2f128_pd(col01_hi_ymm0, col23_hi_ymm0, 0x31);
+    row0_ymm1 = permute2f128(col01_lo_ymm0, col23_lo_ymm0, 0x20);
+    row1_ymm1 = permute2f128(col01_hi_ymm0, col23_hi_ymm0, 0x20);
+    row2_ymm1 = permute2f128(col01_lo_ymm0, col23_lo_ymm0, 0x31);
+    row3_ymm1 = permute2f128(col01_hi_ymm0, col23_hi_ymm0, 0x31);
 
     // Step 5: Repeat for rows 4-7
-    col01_lo_ymm0 = _mm256_unpacklo_pd(c_col4_ymm1, c_col5_ymm1);
-    col01_hi_ymm0 = _mm256_unpackhi_pd(c_col4_ymm1, c_col5_ymm1);
-    col23_lo_ymm0 = _mm256_unpacklo_pd(c_col6_ymm1, c_col7_ymm1);
-    col23_hi_ymm0 = _mm256_unpackhi_pd(c_col6_ymm1, c_col7_ymm1);
+    col01_lo_ymm0 = unpacklo(c_col4_ymm1, c_col5_ymm1);
+    col01_hi_ymm0 = unpackhi(c_col4_ymm1, c_col5_ymm1);
+    col23_lo_ymm0 = unpacklo(c_col6_ymm1, c_col7_ymm1);
+    col23_hi_ymm0 = unpackhi(c_col6_ymm1, c_col7_ymm1);
 
     __m256d row4_ymm0, row5_ymm0, row6_ymm0, row7_ymm0;
-    row4_ymm0 = _mm256_permute2f128_pd(col01_lo_ymm1, col23_lo_ymm1, 0x20);
-    row5_ymm0 = _mm256_permute2f128_pd(col01_hi_ymm1, col23_hi_ymm1, 0x20);
-    row6_ymm0 = _mm256_permute2f128_pd(col01_lo_ymm1, col23_lo_ymm1, 0x31);
-    row7_ymm0 = _mm256_permute2f128_pd(col01_hi_ymm1, col23_hi_ymm1, 0x31);
+    row4_ymm0 = permute2f128(col01_lo_ymm1, col23_lo_ymm1, 0x20);
+    row5_ymm0 = permute2f128(col01_hi_ymm1, col23_hi_ymm1, 0x20);
+    row6_ymm0 = permute2f128(col01_lo_ymm1, col23_lo_ymm1, 0x31);
+    row7_ymm0 = permute2f128(col01_hi_ymm1, col23_hi_ymm1, 0x31);
 
     __m256d row4_ymm1, row5_ymm1, row6_ymm1, row7_ymm1;
-    row4_ymm1 = _mm256_permute2f128_pd(col01_lo_ymm0, col23_lo_ymm0, 0x20);
-    row5_ymm1 = _mm256_permute2f128_pd(col01_hi_ymm0, col23_hi_ymm0, 0x20);
-    row6_ymm1 = _mm256_permute2f128_pd(col01_lo_ymm0, col23_lo_ymm0, 0x31);
-    row7_ymm1 = _mm256_permute2f128_pd(col01_hi_ymm0, col23_hi_ymm0, 0x31);
+    row4_ymm1 = permute2f128(col01_lo_ymm0, col23_lo_ymm0, 0x20);
+    row5_ymm1 = permute2f128(col01_hi_ymm0, col23_hi_ymm0, 0x20);
+    row6_ymm1 = permute2f128(col01_lo_ymm0, col23_lo_ymm0, 0x31);
+    row7_ymm1 = permute2f128(col01_hi_ymm0, col23_hi_ymm0, 0x31);
 
     // write back result: C = alpha * (A*B) + beta * C
-    __m256d alpha_ymm = _mm256_set1_pd(alpha);
-    __m256d beta_ymm = _mm256_set1_pd(beta);
+    __m256d alpha_ymm = set1<__m256d>(alpha);
+    __m256d beta_ymm = set1<__m256d>(beta);
 
     // add the transposed result to matrix C
     double *c_ptr = c;

@@ -156,6 +156,9 @@ inline T set1(float x);
 template <typename T>
 inline T set1(double x);
 
+template <typename T>
+inline T set1(int x);
+
 #if defined(__SSE__)
 template <>
 inline __m128 set1<__m128>(float x) {
@@ -175,6 +178,10 @@ inline __m256 set1<__m256>(float x) {
 template <>
 inline __m256d set1<__m256d>(double x) {
     return _mm256_set1_pd(x);
+}
+template <>
+inline __m256i set1<__m256i>(int x) {
+    return _mm256_set1_epi32(x);
 }
 #endif
 
@@ -248,7 +255,19 @@ inline __m256d blend(__m256d a, __m256d b, const int imm8) {
 
 #if defined(__AVX2__)
 inline __m256d permute4x64(__m256d a, const int imm8) {
-    return _mm256_permute4x64_pd (a, imm8);
+    return _mm256_permute4x64_pd(a, imm8);
+}
+
+inline __m256 permutevar8x32(__m256 a, __m256i idx) {
+    return _mm256_permutevar8x32_ps(a, idx);
+}
+
+inline __m256d permute2f128(__m256d a, __m256d b, int imm8) {
+    return _mm256_permute2f128_pd(a, b, imm8);
+}
+
+inline __m256 permute2f128(__m256 a, __m256 b, int imm8) {
+    return _mm256_permute2f128_ps (a, b, imm8);
 }
 #endif
 

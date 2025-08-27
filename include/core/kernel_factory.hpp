@@ -50,10 +50,10 @@ template <typename TA,
           int64_t CN>
 class GEMMExecutorImpl : public GEMMExecutor<TA, TB, TC> {
    private:
-    MicroKernelType<TA, TB, TC, RM, RN> kernel_;
+    GEMMMicroKernelType<TA, TB, TC, RM, RN> kernel_;
 
    public:
-    GEMMExecutorImpl(MicroKernelType<TA, TB, TC, RM, RN> kernel) : kernel_(kernel) {}
+    GEMMExecutorImpl(GEMMMicroKernelType<TA, TB, TC, RM, RN> kernel) : kernel_(kernel) {}
 
     void multiply(int64_t m,
                   int64_t n,
@@ -88,7 +88,7 @@ class KernelFactory {
 
     // registery kernel
     template <int64_t RM, int64_t RN, int64_t CM, int64_t CK, int64_t CN>
-    void register_kernel(const std::string &name, MicroKernelType<TA, TB, TC, RM, RN> kernel) {
+    void register_kernel(const std::string &name, GEMMMicroKernelType<TA, TB, TC, RM, RN> kernel) {
         creators_[name] = [kernel]() -> ExecutorPtr {
             return std::make_unique<GEMMExecutorImpl<TA, TB, TC, RM, RN, CM, CK, CN>>(kernel);
         };

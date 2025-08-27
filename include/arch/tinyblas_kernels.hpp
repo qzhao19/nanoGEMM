@@ -98,14 +98,26 @@ T load(const float *);
 template <typename T>
 T load(const double *);
 
+template <typename T, typename U>
+T load(const float *);
+
+template <typename T, typename U>
+T load(const double *);
+
 #if defined(__SSE__)
 template <>
 inline __m128 load<__m128>(const float *p) {
     return _mm_loadu_ps(p);
 }
+
 template <>
 inline __m128d load<__m128d>(const double *p) {
     return _mm_loadu_pd(p);
+}
+
+template <>
+inline __m128 load<__m128, float>(const float *p) {
+    return _mm_loadu_ps(p);
 }
 #endif  // __SSE__
 
@@ -118,6 +130,11 @@ inline __m256 load<__m256>(const float *p) {
 template <>
 inline __m256d load<__m256d>(const double *p) {
     return _mm256_loadu_pd(p);
+}
+
+template <> 
+inline __m256 load<__m256, float>(const float *p) {
+    return _mm256_loadu_ps(p);
 }
 #endif  // __AVX__
 
@@ -310,8 +327,8 @@ template <typename T>
 using MicroKernelCtxType = MicroKernelCtx<T>;
 
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
-using MicroKernelType =
-    std::function<void(int64_t, TA *, TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
+using GEMMMicroKernelType =
+    std::function<void(int64_t, const TA *, const TB *, TC *, int64_t, MicroKernelCtxType<TB> *)>;
 
 template <typename TA, typename TX, typename TY, int64_t RM, int64_t RN>
 using GEMVMicroKernelType = 

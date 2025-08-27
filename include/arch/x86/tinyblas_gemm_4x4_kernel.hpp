@@ -8,7 +8,7 @@ namespace detail {
 
 template <int64_t RM, int64_t RN>
 void AddDot_4x4_kernel_float(
-    int64_t k, float *a, float *b, float *c, int64_t ldc, MicroKernelCtxType<float> *ctx) {
+    int64_t k, const float *a, const float *b, float *c, int64_t ldc, MicroKernelCtxType<float> *ctx) {
     int64_t p;
     float *b_next = ctx->next;
     float alpha = 1.0f, beta = 1.0f;
@@ -139,7 +139,7 @@ void AddDot_4x4_kernel_float(
 
 template <int64_t RM, int64_t RN>
 void AddDot_4x4_kernel_double(
-    int64_t k, double *a, double *b, double *c, int64_t ldc, MicroKernelCtxType<double> *ctx) {
+    int64_t k, const double *a, const double *b, double *c, int64_t ldc, MicroKernelCtxType<double> *ctx) {
     int64_t p;
     double *b_next = ctx->next;
     double alpha = 1.0, beta = 1.0;
@@ -282,7 +282,7 @@ void AddDot_4x4_kernel_double(
 }
 
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
-void AddDot_4x4_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc, MicroKernelCtxType<TB> *ctx) {
+void AddDot_4x4_kernel(int64_t k, const TA *a, const TB *b, TC *c, int64_t ldc, MicroKernelCtxType<TB> *ctx) {
     if constexpr (std::is_same_v<TA, float> && std::is_same_v<TB, float> &&
                   std::is_same_v<TC, float>) {
         AddDot_4x4_kernel_float<RM, RN>(k, a, b, c, ldc, ctx);

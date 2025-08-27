@@ -108,7 +108,7 @@ TYPED_TEST_SUITE(GEMM8x8KernelTest, TestTypes);
 
 TYPED_TEST(GEMM8x8KernelTest, BasicMultiplyOddSize) {
     using T = TypeParam;
-    int64_t M = 251, N = 173, K = 251;
+    int64_t M = 251, N = 173, K = 169;
     int64_t lda = K, ldb = N, ldc = N;
     this->generate_test_data(M, N, K, lda, ldb, ldc);
 

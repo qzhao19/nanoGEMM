@@ -8,7 +8,7 @@ namespace detail {
 
 template <int64_t RM, int64_t RN>
 void AddDot_8x8_kernel_float(
-    int64_t k, float *a, float *b, float *c, int64_t ldc, MicroKernelCtxType<float> *ctx) {
+    int64_t k, const float *a, const float *b, float *c, int64_t ldc, MicroKernelCtxType<float> *ctx) {
     int64_t i, p;
     float *b_next = ctx->next;
     float alpha = 1.0f, beta = 1.0f;
@@ -206,8 +206,9 @@ void AddDot_8x8_kernel_float(
 
 template <int64_t RM, int64_t RN>
 void AddDot_8x8_kernel_double(
-    int64_t k, double *a, double *b, double *c, int64_t ldc, MicroKernelCtxType<double> *ctx) {
+    int64_t k, const double *a, const double *b, double *c, int64_t ldc, MicroKernelCtxType<double> *ctx) {
     int64_t p;
+    double *b_next = ctx->next;
     double alpha = 1.0, beta = 1.0;
 
     // 16 accumulators for 8x8 double matrix (8 columns * 2 regs/col)
@@ -219,17 +220,141 @@ void AddDot_8x8_kernel_double(
     __m256d c_col5_ymm0 = setzeros<__m256d>(); __m256d c_col5_ymm1 = setzeros<__m256d>();
     __m256d c_col6_ymm0 = setzeros<__m256d>(); __m256d c_col6_ymm1 = setzeros<__m256d>();
     __m256d c_col7_ymm0 = setzeros<__m256d>(); __m256d c_col7_ymm1 = setzeros<__m256d>();
+
+    // pre-fetch data
+    __asm__ volatile("prefetcht0 0(%0)          \n\t" : : "r"(a));
+    __asm__ volatile("prefetcht0 2(%0)          \n\t" : : "r"(b_next));
+    __asm__ volatile("prefetcht0 0(%0)          \n\t" : : "r"(c));
+
+    // each iteration to process 2 batch data
+    int64_t k_blocks = k / 2;
+    int64_t k_remainder = k % 2;
     
     // define a0 a1 b0 b1, initializ a0 and b0
     __m256d tmp_ymm;
-    __m256d a_col_ymm0, b_row_ymm0;
-    __m256d a_col_ymm1, b_row_ymm1;
+    __m256d a_col_ymm0_0, b_row_ymm0_0;
+    __m256d a_col_ymm1_0, b_row_ymm1_0;
+    __m256d a_col_ymm0_1, b_col_ymm0_1;
+    __m256d a_col_ymm1_1, b_col_ymm1_1;
 
-    for (p = 0; p < k; ++p) {
-        a_col_ymm0 = load<__m256d>(a); 
-        a_col_ymm1 = load<__m256d>(a + 4);
-        b_row_ymm0 = load<__m256d>(b); 
-        b_row_ymm1 = load<__m256d>(b + 4);
+    a_col_ymm0_0 = load<__m256d>(a); 
+    b_row_ymm0_0 = load<__m256d>(b); 
+    a_col_ymm1_0 = load<__m256d>(a + 4);
+    b_row_ymm1_0 = load<__m256d>(b + 4);
+
+    for (p = 0; p < k_blocks; ++p) {
+         // prefetch data that is far from the current location
+        __asm__ volatile("prefetcht0 256(%0)          \n\t" : : "r"(a));
+        __asm__ volatile("prefetcht0 256(%0)          \n\t" : : "r"(b));
+
+        // pre-load a for next k = 2 
+        a_col_ymm0_1 = load<__m256d>(a + 8); 
+        b_col_ymm0_1 = load<__m256d>(b + 8); 
+        
+        // handle a[0:3] * b[0] and a[4:7] * b[0] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm0_0, 0x00);
+        c_col0_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col0_ymm0);
+        c_col0_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col0_ymm1);
+
+        // handle a[0:3] * b[1] and a[4:7] * b[1] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm0_0, 0x55);
+        c_col1_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col1_ymm0);
+        c_col1_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col1_ymm1);
+
+         // handle a[0:3] * b[2] and a[4:7] * b[2] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm0_0, 0xAA);
+        c_col2_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col2_ymm0);
+        c_col2_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col2_ymm1);
+
+        // handle a[0:3] * b[3] and a[4:7] * b[3] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm0_0, 0xFF);
+        c_col3_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col3_ymm0);
+        c_col3_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col3_ymm1);
+
+        a_col_ymm1_1 = load<__m256d>(a + 12);
+        b_col_ymm1_1 = load<__m256d>(b + 12);
+
+        // handle a[0:3] * b[4] and a[4:7] * b[4] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm1_0, 0x00);
+        c_col4_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col4_ymm0);
+        c_col4_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col4_ymm1);
+
+        // handle a[0:3] * b[5] and a[4:7] * b[5] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm1_0, 0x55);
+        c_col5_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col5_ymm0);
+        c_col5_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col5_ymm1);
+
+        // handle a[0:3] * b[6] and a[4:7] * b[6] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm1_0, 0xAA);
+        c_col6_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col6_ymm0);
+        c_col6_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col6_ymm1);
+
+        // handle a[0:3] * b[4] and a[4:7] * b[4] for 1st iteration
+        tmp_ymm = permute4x64(b_row_ymm1_0, 0xFF);
+        c_col7_ymm0 = madd(a_col_ymm0_0, tmp_ymm, c_col7_ymm0);
+        c_col7_ymm1 = madd(a_col_ymm1_0, tmp_ymm, c_col7_ymm1);
+
+        // prefetch data
+        __asm__ volatile("prefetcht0 256(%0)         \n\t" : : "r"(a));
+        __asm__ volatile("prefetcht1 256(%0)         \n\t" : : "r"(b));
+
+        a_col_ymm0_0 = load<__m256d>(a + 16); 
+        b_row_ymm0_0 = load<__m256d>(b + 16); 
+        
+        // handle a[0:3] * b[0] and a[4:7] * b[0] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm0_1, 0x00);
+        c_col0_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col0_ymm0);
+        c_col0_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col0_ymm1);
+
+        // handle a[0:3] * b[1] and a[4:7] * b[1] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm0_1, 0x55);
+        c_col1_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col1_ymm0);
+        c_col1_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col1_ymm1);
+
+         // handle a[0:3] * b[2] and a[4:7] * b[2] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm0_1, 0xAA);
+        c_col2_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col2_ymm0);
+        c_col2_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col2_ymm1);
+
+        // handle a[0:3] * b[3] and a[4:7] * b[3] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm0_1, 0xFF);
+        c_col3_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col3_ymm0);
+        c_col3_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col3_ymm1);
+
+        a_col_ymm1_0 = load<__m256d>(a + 20);
+        b_row_ymm1_0 = load<__m256d>(b + 20);
+
+        // handle a[0:3] * b[4] and a[4:7] * b[4] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm1_1, 0x00);
+        c_col4_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col4_ymm0);
+        c_col4_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col4_ymm1);
+
+        // handle a[0:3] * b[5] and a[4:7] * b[5] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm1_1, 0x55);
+        c_col5_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col5_ymm0);
+        c_col5_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col5_ymm1);
+
+        // handle a[0:3] * b[6] and a[4:7] * b[6] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm1_1, 0xAA);
+        c_col6_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col6_ymm0);
+        c_col6_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col6_ymm1);
+
+        // handle a[0:3] * b[4] and a[4:7] * b[4] for 2ed iteration
+        tmp_ymm = permute4x64(b_col_ymm1_1, 0xFF);
+        c_col7_ymm0 = madd(a_col_ymm0_1, tmp_ymm, c_col7_ymm0);
+        c_col7_ymm1 = madd(a_col_ymm1_1, tmp_ymm, c_col7_ymm1);
+
+        // update pointer
+        a += 16;
+        b += 16;
+    }
+
+    // handle remainding elements
+    for (p = 0; p < k_remainder; ++p) {
+        __m256d a_col_ymm0 = load<__m256d>(a); 
+        __m256d a_col_ymm1 = load<__m256d>(a + 4);
+        __m256d b_row_ymm0 = load<__m256d>(b); 
+        __m256d b_row_ymm1 = load<__m256d>(b + 4);
 
         // handle a[0:3] * b[0] and a[4:7] * b[0] for 1st iteration
         tmp_ymm = permute4x64(b_row_ymm0, 0x00);
@@ -359,7 +484,7 @@ void AddDot_8x8_kernel_double(
 }
 
 template <typename TA, typename TB, typename TC, int64_t RM, int64_t RN>
-void AddDot_8x8_kernel(int64_t k, TA *a, TB *b, TC *c, int64_t ldc, MicroKernelCtxType<TB> *ctx) {
+void AddDot_8x8_kernel(int64_t k, const TA *a, const TB *b, TC *c, int64_t ldc, MicroKernelCtxType<TB> *ctx) {
     if constexpr (std::is_same_v<TA, float> && std::is_same_v<TB, float> &&
                   std::is_same_v<TC, float>) {
         AddDot_8x8_kernel_float<RM, RN>(k, a, b, c, ldc, ctx);

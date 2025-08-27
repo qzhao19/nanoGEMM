@@ -31,7 +31,7 @@ private:
     const int64_t ldb_;
     const int64_t ldc_;
 
-    MicroKernelType<TA, TB, TC, RM, RN> micro_kernel_;
+    GEMMMicroKernelType<TA, TB, TC, RM, RN> micro_kernel_;
 
     void pack_matrix_A(
         int64_t m, int64_t k, int64_t row_begin, int64_t col_begin, const TA *A, TA *packed_A) {
@@ -83,7 +83,7 @@ public:
          int64_t ldb,
          TC *C,
          int64_t ldc,
-         MicroKernelType<TA, TB, TC, RM, RN> micro_kernel)
+         GEMMMicroKernelType<TA, TB, TC, RM, RN> micro_kernel)
         : A_(A), lda_(lda), B_(B), ldb_(ldb), C_(C), ldc_(ldc), micro_kernel_(micro_kernel) {};
     ~GEMM() = default;
 

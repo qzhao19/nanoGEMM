@@ -20,7 +20,7 @@ class GEMV32x4KernelTest : public ::testing::Test {
     }
 
     void generate_test_data(int64_t m, int64_t n, int64_t lda, T min = -1, T max = 1) {
-        A = new T[n * lda];
+        A = new T[m * n];
         x = new T[n];
         y = new T[m];
         y_ref = new T[m];
@@ -49,7 +49,7 @@ class GEMV32x4KernelTest : public ::testing::Test {
         for (int64_t i = 0; i < m; ++i) {
             T sum = 0;
             for (int64_t j = 0; j < n; ++j) {
-                sum += A[j * lda + i] * x[j];
+                sum += A[i * lda + j] * x[j];
             }
             y_ref[i] = sum;
         }
@@ -89,7 +89,7 @@ TYPED_TEST_SUITE(GEMV32x4KernelTest, TestTypes);
 TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyOddSize) {
     using T = TypeParam;
     int64_t M = 3251, N = 1173;
-    int64_t lda = M;
+    int64_t lda = N;
     this->generate_test_data(M, N, lda);
 
     // naive GEMM for reference
@@ -105,7 +105,7 @@ TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyOddSize) {
 TYPED_TEST(GEMV32x4KernelTest, BasicMultiplyEvenSize) {
     using T = TypeParam;
     int64_t M = 512, N = 256;
-    int64_t lda = M;
+    int64_t lda = N;
     this->generate_test_data(M, N, lda);
 
     // naive GEMM for reference

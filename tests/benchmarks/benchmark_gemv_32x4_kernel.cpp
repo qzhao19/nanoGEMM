@@ -9,12 +9,20 @@
 // Reference GEMV implementation for benchmarking
 template <typename T>
 void gemv_ref(int64_t m, int64_t n, const T* A, int64_t lda, const T* x, T* y) {
-    for (int64_t j = 0; j < n; ++j) {
-        float xj = x[j];
-        const float* a_col = A + j * lda;
-        for (int64_t i = 0; i < m; ++i) {
-            y[i] += a_col[i] * xj;
+    // for (int64_t j = 0; j < n; ++j) {
+    //     float xj = x[j];
+    //     const float* a_col = A + j * lda;
+    //     for (int64_t i = 0; i < m; ++i) {
+    //         y[i] += a_col[i] * xj;
+    //     }
+    // }
+    int64_t i, j;
+    for (int64_t i = 0; i < m; ++i) {
+        T sum = 0;
+        for (int64_t j = 0; j < n; ++j) {
+            sum += A[i * lda + j] * x[j];
         }
+        y_ref[i] = sum;
     }
 }
 
@@ -22,7 +30,7 @@ template <typename T>
 class GEMV32x4Benchmark {
 public:
     GEMV32x4Benchmark(int64_t m, int64_t n)
-        : m_(m), n_(n), lda_(m) {
+        : m_(m), n_(n), lda_(n) {
         engine_.seed(42);
         allocate_and_generate_data();
     }
@@ -44,25 +52,48 @@ public:
 
 private:
     void allocate_and_generate_data() {
-        A_ = new T[n_ * lda_];
-        x_ = new T[n_];
-        y_ = new T[m_];
+        // A_ = new T[n_ * lda_];
+        // x_ = new T[n_];
+        // y_ = new T[m_];
 
-        std::uniform_real_distribution<T> dist(-1.0, 1.0);
+        // std::uniform_real_distribution<T> dist(-1.0, 1.0);
 
         // Initialize matrix A (column-major)
-        for (int64_t j = 0; j < n_; ++j) {
-            for (int64_t i = 0; i < m_; ++i) {
-                A_[j * lda_ + i] = dist(engine_);
+        // for (int64_t j = 0; j < n_; ++j) {
+        //     for (int64_t i = 0; i < m_; ++i) {
+        //         A_[j * lda_ + i] = dist(engine_);
+        //     }
+        // }
+        // // Initialize vector x
+        // for (int64_t j = 0; j < n_; ++j) {
+        //     x_[j] = dist(engine_);
+        // }
+        // // Initialize vector y
+        // for (int64_t i = 0; i < m_; ++i) {
+        //     y_[i] = static_cast<T>(0);
+        // }
+
+        A = new T[m * n];
+        x = new T[n];
+        y = new T[m];
+        y_ref = new T[m];
+
+        int64_t i, j, p;
+        std::uniform_real_distribution<T> dist(min, max);
+
+        for (p = 0; p < n; ++p) {
+            for (i = 0; i < m; ++i) {
+                A[p * lda + i] = dist(engine_);
             }
         }
-        // Initialize vector x
-        for (int64_t j = 0; j < n_; ++j) {
-            x_[j] = dist(engine_);
+
+        for (j = 0; j < n; ++j) {
+            x[j] = dist(engine_);
         }
-        // Initialize vector y
-        for (int64_t i = 0; i < m_; ++i) {
-            y_[i] = static_cast<T>(0);
+
+        for (int64_t i = 0; i < m; ++i) {
+            y[i] = static_cast<T>(0.0);
+            y_ref[i] = static_cast<T>(0.0);
         }
     }
 
